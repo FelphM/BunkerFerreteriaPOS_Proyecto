@@ -1,16 +1,34 @@
-# React + Vite
+# 🛠️ Ferromat POS - Sistema de Gestión y Punto de Venta
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Un sistema de Punto de Venta (POS) e Inventario diseñado específicamente para resolver los desafíos operativos de las ferreterías de tamaño medio. Construido para ser extremadamente rápido, tolerante a interrupciones y amigable para usuarios no técnicos.
 
-Currently, two official plugins are available:
+## 🎯 ¿El Problema?
+Las ferreterías medianas operan bajo constante presión, vendiendo productos en múltiples formatos (unidades, metros, kilos) y sufriendo interrupciones continuas en el mostrador. Ferromat POS elimina el uso de cuadernos y memoria, automatizando el control de stock, el cálculo de márgenes y la retención de ventas en espera.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Características Principales
+* **Búsqueda Rapida:** Buscador unificado y optimizado para escáneres de código de barras USB y búsquedas manuales por texto.
+* **Venta Fraccionada:** Soporte nativo para vender productos por unidades, kilos, metros o cajas (decimales soportados).
+* **Precios Inteligentes:** Cálculo automático del precio de venta final basado en el costo del proveedor y un margen de ganancia configurable.
+* **Tolerancia a Interrupciones:** Botón de "Pausar Venta" que guarda el carrito actual en una cola de espera para atender emergencias sin perder datos.
+* **Inventario Blindado:** Triggers en base de datos que previenen quiebres de stock y generan alertas automáticas cuando un producto llega a su nivel crítico.
 
+## 💻 Tecnologias y herramientas utilizadas
+**Frontend:**
+* React 18
+* Vite (Bundler ultra-rápido)
+* Bootstrap 5 + Bootstrap Icons (UI/UX)
+
+**Backend (BaaS):**
+* Supabase
+* PostgreSQL (Triggers, Funciones RPC y Row Level Security)
+
+## 🚀 Cómo levantar el proyecto en local
+
+1. Clonar el repositorio:
+   ```bash
+   git clone https://github.com/FelphM/Ferromat_Proyecto.git
+
+   
 ## React Compiler
 
 The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
