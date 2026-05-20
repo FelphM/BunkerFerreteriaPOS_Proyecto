@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Configuración y caché de Claude Code
+.claude/
+!.claude/settings.json
+!.claude/CLAUDE.md
+CLAUDE.local.md
