@@ -1,0 +1,445 @@
+/* ===========================================================================
+ * app.css
+ * Tema visual del sistema POS de Ferromat S.A.
+ *
+ * Complementa a Bootstrap 5 (no lo reemplaza). Define:
+ *   - Paleta de marca (variables CSS).
+ *   - Layout: sidebar + area de contenido.
+ *   - Componentes del POS: barra superior, carrito, grilla, panel de cobro.
+ *   - Encabezados de pagina (vistas placeholder).
+ *
+ * Convencion de prefijo: todas las clases propias empiezan con `fp-`
+ * (Ferromat POS) para no colisionar con utilidades de Bootstrap.
+ * ======================================================================== */
+
+:root {
+  --fp-sidebar-bg: #1d2536;
+  --fp-sidebar-hover: #2a3447;
+  --fp-sidebar-text: #c7ccd6;
+  --fp-sidebar-muted: #7d8597;
+
+  --fp-accent: #e8620e; /* naranja de marca */
+  --fp-accent-soft: #fff1e6; /* naranja muy claro (fondos) */
+  --fp-accent-grad: linear-gradient(135deg, #e8620e 0%, #fb7a2a 100%);
+
+  --fp-bg: #eef0f3; /* fondo del area de contenido */
+  --fp-border: #e3e6ea;
+  --fp-radius: 0.65rem;
+}
+
+/* Reset minimo: el POS ocupa toda la pantalla sin scroll global. */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+body {
+  overflow: hidden;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  background: var(--fp-bg);
+}
+
+/* ===========================================================================
+ * LAYOUT GENERAL
+ * ======================================================================== */
+.fp-content {
+  background: var(--fp-bg);
+  padding: 0.9rem 1rem;
+  gap: 0.9rem;
+  min-width: 0; /* permite que los hijos flex se encojan sin desbordar */
+}
+
+/* ===========================================================================
+ * SIDEBAR
+ * ======================================================================== */
+.fp-sidebar {
+  width: 232px;
+  background: var(--fp-sidebar-bg);
+  color: var(--fp-sidebar-text);
+}
+
+.fp-sidebar-brand {
+  height: 64px;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.fp-sidebar-tagline {
+  color: var(--fp-sidebar-muted);
+  font-size: 0.72rem;
+}
+
+.fp-nav-link {
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.5rem;
+  color: var(--fp-sidebar-text);
+  text-decoration: none;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.fp-nav-link:hover {
+  background: var(--fp-sidebar-hover);
+  color: #fff;
+}
+/* Seccion activa: resaltada con el naranja de marca. */
+.fp-nav-link.active {
+  background: var(--fp-accent-grad);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(232, 98, 14, 0.35);
+}
+
+.fp-sidebar-user {
+  height: 64px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.fp-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--fp-sidebar-hover);
+  color: var(--fp-sidebar-text);
+  flex-shrink: 0;
+}
+
+/* ===========================================================================
+ * VISTAS DEL BACK-OFFICE (Dashboard, Inventario, Ventas, ...)
+ * ======================================================================== */
+
+/* Encabezado de pagina */
+.fp-page-header {
+  flex-shrink: 0;
+}
+.fp-page-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 0.6rem;
+  background: #fff;
+  border: 1px solid var(--fp-border);
+  color: var(--fp-accent);
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+/* Cuerpo de pagina: area con scroll vertical propio */
+.fp-page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.fp-placeholder-icon {
+  font-size: 4rem;
+  color: var(--fp-border);
+}
+
+/* Tarjeta de indicador (StatCard) */
+.fp-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+.fp-stat-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.fp-stat-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.min-w-0 {
+  min-width: 0;
+}
+
+/* Barra de filtros / busqueda dentro de las tablas */
+.fp-filtro-busqueda {
+  width: 280px;
+  max-width: 100%;
+}
+
+/* Ranking numerado (Dashboard) */
+.fp-rank {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--fp-accent-soft);
+  color: var(--fp-accent);
+  font-weight: 700;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Barras horizontales de los reportes */
+.fp-bar-track {
+  height: 8px;
+  background: var(--fp-border);
+  border-radius: 50rem;
+  overflow: hidden;
+  margin-top: 3px;
+}
+.fp-bar-fill {
+  height: 100%;
+  background: var(--fp-accent);
+  border-radius: 50rem;
+}
+
+/* ===========================================================================
+ * PUNTO DE VENTA - estructura
+ * ======================================================================== */
+.fp-pos {
+  gap: 0.9rem;
+  min-height: 0;
+}
+
+/* Barra superior */
+.fp-pos-topbar {
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Cuerpo: 3 paneles lado a lado, cada uno con scroll interno propio. */
+.fp-pos-body {
+  display: flex;
+  gap: 0.9rem;
+  flex: 1 1 auto;
+  min-height: 0; /* clave para que los paneles internos scrolleen */
+}
+
+/* ===========================================================================
+ * PANEL IZQUIERDO - Carrito
+ * ======================================================================== */
+.fp-cart-panel {
+  flex: 1 1 290px;
+  min-width: 270px;
+  max-width: 380px;
+}
+.fp-cart-count {
+  background: var(--fp-accent);
+  color: #fff;
+  border-radius: 50rem;
+}
+.fp-cart-item {
+  border: 1px solid var(--fp-border);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  background: #fff;
+}
+.fp-qty-group {
+  width: 116px;
+}
+/* Oculta las flechas nativas de los input number. */
+.fp-pos input[type='number']::-webkit-outer-spin-button,
+.fp-pos input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.fp-pos input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.fp-cart-subtotal {
+  color: var(--fp-accent);
+}
+
+/* ===========================================================================
+ * PANEL CENTRAL - Catalogo
+ * ======================================================================== */
+.fp-product-grid {
+  flex: 2 1 460px;
+  min-width: 0;
+}
+
+/* Pestanas de categoria */
+.fp-cat-tab {
+  background: #fff;
+  border: 1px solid var(--fp-border);
+  color: #495057;
+  font-weight: 500;
+}
+.fp-cat-tab:hover {
+  border-color: var(--fp-accent);
+  color: var(--fp-accent);
+}
+.fp-cat-tab.active {
+  background: var(--fp-accent);
+  border-color: var(--fp-accent);
+  color: #fff;
+}
+
+/* Grilla de tarjetas */
+.fp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 0.75rem;
+}
+
+.fp-product-card {
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease,
+    border-color 0.1s ease;
+  border: 1px solid var(--fp-border) !important;
+}
+.fp-product-card:hover:not(:disabled) {
+  transform: translateY(-3px);
+  border-color: var(--fp-accent) !important;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1) !important;
+}
+.fp-product-card:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.fp-product-icon {
+  font-size: 1.85rem;
+  color: #ced4da;
+}
+.fp-product-name {
+  font-size: 0.86rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* maximo 2 lineas, recorta el resto */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.fp-product-price {
+  color: var(--fp-accent);
+  font-size: 1.02rem;
+}
+.fp-stock-badge {
+  font-weight: 600;
+  font-size: 0.68rem;
+}
+
+/* ===========================================================================
+ * PANEL DERECHO - Cobro
+ * ======================================================================== */
+.fp-checkout {
+  flex: 0 0 338px;
+}
+
+/* Caja de totales (naranja destacada) */
+.fp-totals-box {
+  background: var(--fp-accent-grad);
+  color: #fff;
+  border-radius: var(--fp-radius);
+  padding: 1rem 1.1rem;
+  box-shadow: 0 6px 16px rgba(232, 98, 14, 0.3);
+  flex-shrink: 0;
+}
+.fp-total-amount {
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.fp-checkout-body {
+  min-height: 0;
+  padding-right: 0.15rem;
+}
+
+/* Etiquetas de campo */
+.fp-field-label {
+  display: block;
+  margin: 0.85rem 0 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a909c;
+}
+
+/* Metodos de pago */
+.fp-pay-methods {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+.fp-pay-method {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.6rem 0.25rem;
+  background: #fff;
+  border: 1.5px solid var(--fp-border);
+  border-radius: 0.5rem;
+  color: #6c757d;
+  transition: all 0.12s ease;
+}
+.fp-pay-method:hover {
+  border-color: var(--fp-accent);
+}
+.fp-pay-method.active {
+  border-color: var(--fp-accent);
+  background: var(--fp-accent-soft);
+  color: var(--fp-accent);
+  font-weight: 600;
+}
+
+/* Montos rapidos */
+.fp-quick-amounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+/* Vuelto / falta */
+.fp-vuelto {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+.fp-vuelto.ok {
+  background: #e7f6ec;
+  color: #1a7a3c;
+}
+.fp-vuelto.falta {
+  background: #fdecec;
+  color: #c0392b;
+}
+
+/* Acciones de cobro */
+.fp-checkout-actions {
+  padding-top: 0.75rem;
+  flex-shrink: 0;
+}
+.fp-btn-cobrar {
+  background: #ffc107;
+  border: none;
+  color: #1d2536;
+  font-weight: 700;
+  font-size: 1.15rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--fp-radius);
+}
+.fp-btn-cobrar:hover:not(:disabled) {
+  background: #e0a800;
+  color: #1d2536;
+}
+.fp-btn-cobrar:disabled {
+  opacity: 0.55;
+}
+
+/* Boton naranja reutilizable (ej: "Recuperar" en el modal) */
+.fp-btn-accent {
+  background: var(--fp-accent);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+}
+.fp-btn-accent:hover {
+  background: #cf550b;
+  color: #fff;
+}
