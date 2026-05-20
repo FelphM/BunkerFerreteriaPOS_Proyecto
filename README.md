@@ -26,7 +26,9 @@ Las ferreterías medianas operan bajo constante presión, vendiendo productos en
 
 1. Clonar el repositorio:
    ```bash
-   git clone https://github.com/FelphM/Ferromat_Proyecto.git
+   1. git clone https://github.com/FelphM/Ferromat_Proyecto.git
+   2. npm install (dependencias)
+   3. npm run dev (ejecutar entorno de desarrollo)
 
    
 ## React Compiler
