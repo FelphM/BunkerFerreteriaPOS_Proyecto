@@ -1,9 +1,9 @@
-# 🛠️ Ferromat POS - Sistema de Gestión y Punto de Venta
+# 🛠️ Bunker Ferreteria POS - Sistema de Gestión y Punto de Venta
 
 Un sistema de Punto de Venta (POS) e Inventario diseñado específicamente para resolver los desafíos operativos de las ferreterías de tamaño medio. Construido para ser extremadamente rápido, tolerante a interrupciones y amigable para usuarios no técnicos.
 
 ## 🎯 ¿El Problema?
-Las ferreterías medianas operan bajo constante presión, vendiendo productos en múltiples formatos (unidades, metros, kilos) y sufriendo interrupciones continuas en el mostrador. Ferromat POS elimina el uso de cuadernos y memoria, automatizando el control de stock, el cálculo de márgenes y la retención de ventas en espera.
+Las ferreterías medianas operan bajo constante presión, vendiendo productos en múltiples formatos (unidades, metros, kilos) y sufriendo interrupciones continuas en el mostrador. Bunker Ferreteria POS elimina el uso de cuadernos y memoria, automatizando el control de stock, el cálculo de márgenes y la retención de ventas en espera.
 
 ## Características Principales
 * **Búsqueda Rapida:** Buscador unificado y optimizado para escáneres de código de barras USB y búsquedas manuales por texto.
@@ -26,7 +26,7 @@ Las ferreterías medianas operan bajo constante presión, vendiendo productos en
 
 1. Clonar el repositorio:
    ```bash
-   1. git clone https://github.com/FelphM/Ferromat_Proyecto.git
+   1. git clone https://github.com/FelphM/BunkerFerreteriaPOS_Proyecto.git
    2. npm install (dependencias)
    3. npm run dev (ejecutar entorno de desarrollo)
 
