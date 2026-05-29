@@ -36,6 +36,7 @@ export default function CheckoutPanel({
   notas,
   onChangeNotas,
   hayItems,
+  errorVenta,
   onCobrar,
   onApartar,
   onCotizar,
@@ -174,6 +175,14 @@ export default function CheckoutPanel({
           onChange={(e) => onChangeNotas(e.target.value)}
         />
       </div>
+
+      {/* Error de venta (ej: "Stock insuficiente" devuelto por trigger Supabase) */}
+      {errorVenta && (
+        <div className="alert alert-danger d-flex align-items-center gap-2 py-2 my-2 small">
+          <i className="bi bi-exclamation-circle-fill flex-shrink-0" />
+          <span>{errorVenta}</span>
+        </div>
+      )}
 
       {/* ----------------------- ACCIONES ------------------------------ */}
       <div className="fp-checkout-actions">

@@ -18,6 +18,7 @@ import {
   getCategorias,
   getMovimientos,
 } from '../data/queries';
+import { useQuery } from '../hooks/useQuery';
 import { formatCLP, formatFechaHora } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
 
@@ -49,13 +50,14 @@ function Barra({ etiqueta, detalle, valor, max, color = 'primary' }) {
 }
 
 export default function ReportesPage() {
-  const reportes = useMemo(() => {
-    const ventas = getVentas();
-    const detalle = getDetalleVentasGlobal();
-    const variantes = getVariantesInventario();
-    const categorias = getCategorias();
-    const movimientos = getMovimientos();
+  const { data: ventas = [] } = useQuery(getVentas);
+  const { data: detalle = [] } = useQuery(getDetalleVentasGlobal);
+  const { data: variantes = [] } = useQuery(getVariantesInventario);
+  const { data: categorias = [] } = useQuery(getCategorias);
+  const { data: movimientosRaw = [] } = useQuery(getMovimientos);
 
+
+  const reportes = useMemo(() => {
     // --- Ventas por metodo de pago ---
     const porMetodo = {};
     for (const v of ventas) {
@@ -102,9 +104,9 @@ export default function ReportesPage() {
       topProductos,
       porCategoria,
       valorInventario: variantes.reduce((s, v) => s + v.valor_stock, 0),
-      movimientos: movimientos.slice(0, 8),
+      movimientos: movimientosRaw.slice(0, 8),
     };
-  }, []);
+  }, [ventas, detalle, variantes, categorias, movimientosRaw]);
 
   const maxMetodo = Math.max(
     ...reportes.ventasPorMetodo.map((m) => m.monto),

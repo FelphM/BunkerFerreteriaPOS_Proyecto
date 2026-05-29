@@ -4,17 +4,15 @@
  * Vista PRINCIPAL: Punto de Venta de Ferromat S.A.
  *
  * Orquesta los 4 bloques de la pantalla:
- *   - BARRA SUPERIOR : <PosTopBar />     (buscar / escanear / fecha)
+ *   - BARRA SUPERIOR : <PosTopBar />     (filtro de grilla + Añadir Producto)
  *   - PANEL IZQUIERDO: <CartPanel />     (carrito de venta)
  *   - PANEL CENTRAL  : <ProductGrid />   (catalogo por categorias)
- *   - PANEL DERECHO  : <CheckoutPanel /> (cobro) + <HeldSalesModal />
- *
- * La logica de negocio del carrito vive en el hook usePosCart. Aqui solo se
- * conecta el hook con la UI y se maneja el estado del formulario de cobro.
+ *   - PANEL DERECHO  : <CheckoutPanel /> (cobro)
+ *   + Modales: <AddProductModal /> y <HeldSalesModal />
  * ---------------------------------------------------------------------------
  */
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { getSellableItems } from '../data/queries';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { getSellableItems, getCategorias } from '../data/queries';
 import { usePosCart } from '../hooks/usePosCart';
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 import { formatCLP } from '../utils/format';
@@ -22,42 +20,43 @@ import PosTopBar from '../components/PosTopBar';
 import CartPanel from '../components/CartPanel';
 import ProductGrid from '../components/ProductGrid';
 import CheckoutPanel from '../components/CheckoutPanel';
+import AddProductModal from '../components/AddProductModal';
 import HeldSalesModal from '../components/HeldSalesModal';
 
 export default function PosPage() {
-  // --- Logica de negocio (carrito, totales, ventas apartadas) -------------
   const {
-    cart,
-    heldSales,
-    totals,
-    ivaPct,
-    addToCart,
-    updateQuantity,
-    changeQuantity,
-    removeItem,
-    clearCart,
-    pauseSale,
-    recoverSale,
+    cart, heldSales, totals, ivaPct,
+    addToCart, updateQuantity, changeQuantity, removeItem, clearCart,
+    pauseSale, recoverSale, finalizarVenta,
   } = usePosCart();
 
-  // --- Catalogo de items vendibles (memo: se calcula una sola vez) --------
-  const sellableItems = useMemo(() => getSellableItems(), []);
+  // Catalogo cargado desde Supabase.
+  const [sellableItems, setSellableItems] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [cargando, setCargando] = useState(true);
 
-  // --- Estado de UI / formulario de cobro ---------------------------------
+  useEffect(() => {
+    Promise.all([getSellableItems(), getCategorias()])
+      .then(([items, cats]) => { setSellableItems(items); setCategorias(cats); })
+      .catch(console.error)
+      .finally(() => setCargando(false));
+  }, []);
+
+  // Estado de UI.
   const [query, setQuery] = useState('');
-  const [metodoPago, setMetodoPago] = useState('efectivo');
+  const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [montoRecibido, setMontoRecibido] = useState('');
   const [cliente, setCliente] = useState('');
   const [notas, setNotas] = useState('');
+  const [showAddProduct, setShowAddProduct] = useState(false);
   const [showHeldModal, setShowHeldModal] = useState(false);
+  const [errorVenta, setErrorVenta] = useState(null);
 
   const searchInputRef = useRef(null);
   const hayItems = cart.length > 0;
 
-  // -------------------------------------------------------------------------
-  // PISTOLA DE CODIGO DE BARRAS
-  // -------------------------------------------------------------------------
-  // Al leer un codigo, buscamos el SKU y lo agregamos directo al carrito.
+  // ---- PISTOLA DE CODIGO DE BARRAS ------------------------------------
+  // Detecta lecturas rapidas y agrega directo al carrito.
   const handleScan = useCallback(
     (code) => {
       const item = sellableItems.find((i) => i.codigo_barras === code);
@@ -71,79 +70,72 @@ export default function PosPage() {
   );
   useBarcodeScanner(handleScan);
 
-  // -------------------------------------------------------------------------
-  // HANDLERS DE FORMULARIO
-  // -------------------------------------------------------------------------
-
-  /** Reinicia el formulario de cobro tras finalizar/limpiar una venta. */
   const resetCheckoutForm = () => {
-    setMetodoPago('efectivo');
+    setMetodoPago('Efectivo');
     setMontoRecibido('');
     setCliente('');
     setNotas('');
+    setErrorVenta(null);
   };
 
-  /** Boton "Escanear": enfoca el buscador para la pistola/tipeo. */
-  const handleScanClick = () => searchInputRef.current?.focus();
+  // ---- HANDLERS -------------------------------------------------------
 
-  /** Acceso rapido "Nuevo cliente". */
-  const handleAddClient = () => {
-    // TODO: Supabase Insert en tabla `clientes` (abrir modal de alta).
-    window.alert('Alta de cliente: pendiente de implementar.');
-  };
+  /** Agrega un item desde el modal o la grilla y cierra el modal. */
+  const handleAddItem = useCallback(
+    (item) => {
+      addToCart(item);
+      // No cerramos el modal: el cajero puede seguir agregando productos.
+    },
+    [addToCart],
+  );
 
-  /** COBRAR: finaliza la venta y limpia la pantalla. */
-  const handleCobrar = () => {
+  /** COBRAR: inserta la venta en Supabase y limpia la pantalla. */
+  const handleCobrar = async () => {
     if (!hayItems) return;
+    setErrorVenta(null);
 
-    // TODO: Supabase Insert en tabla `ventas`
-    //       (cabecera: neto, iva, total, metodo_pago, cliente, notas, fecha).
-    // TODO: Supabase Insert en tabla `detalle_ventas`
-    //       (una fila por item de `cart`: id_variante, cantidad,
-    //        precio_unitario, subtotal).
-    // TODO: Supabase Update de `stock_actual` en `producto_variantes`
-    //       (descontar la cantidad vendida de cada item).
+    const result = await finalizarVenta({
+      nombreCliente: cliente.trim() || 'Cliente General',
+      rutCliente: null,
+      correoCliente: null,
+      metodoPago,
+      observaciones: notas.trim() || null,
+    });
 
-    window.alert(
-      `Venta cobrada\n` +
-        `Total: ${formatCLP(totals.total)}\n` +
-        `Pago: ${metodoPago}\n` +
-        `Cliente: ${cliente.trim() || 'Publico en general'}`,
-    );
-    clearCart();
-    resetCheckoutForm();
+    if (result.success) {
+      window.alert(
+        `Venta #${result.venta?.numero_venta ?? ''} registrada\n` +
+        `Total: ${formatCLP(totals.total)}\nPago: ${metodoPago}`,
+      );
+      resetCheckoutForm();
+    } else {
+      setErrorVenta(result.error ?? 'Error al procesar la venta.');
+    }
   };
 
-  /** APARTAR: deja la venta en espera (ventas_en_espera). */
-  const handleApartar = () => {
-    // TODO: reemplazar window.prompt por un modal de input propio.
+  /** APARTAR: guarda el carrito en `ventas_en_espera`. */
+  const handleApartar = async () => {
     const nombre = window.prompt(
       'Nombre de referencia para la venta apartada:',
       cliente.trim() || `Cliente ${heldSales.length + 1}`,
     );
-    if (nombre === null) return; // cajero cancelo.
-    if (pauseSale(nombre)) resetCheckoutForm();
+    if (nombre === null) return;
+    const ok = await pauseSale(nombre);
+    if (ok) resetCheckoutForm();
   };
 
-  /** COTIZAR: genera una cotizacion sin afectar stock. */
+  /** COTIZAR: sin afectar stock. */
   const handleCotizar = () => {
     if (!hayItems) return;
-    // TODO: Supabase Insert en tabla `cotizaciones` (+ detalle_cotizaciones).
-    window.alert(
-      `Cotizacion generada por ${formatCLP(totals.total)}.\n` +
-        'La cotizacion no descuenta stock.',
-    );
+    window.alert(`Cotizacion por ${formatCLP(totals.total)}.\nNo descuenta stock.`);
   };
 
-  /** Recupera una venta apartada al carrito actual. */
-  const handleRecoverSale = (esperaId) => {
-    recoverSale(esperaId);
+  const handleRecoverSale = async (esperaId) => {
+    await recoverSale(esperaId);
     setShowHeldModal(false);
   };
 
-  // -------------------------------------------------------------------------
-  // RENDER
-  // -------------------------------------------------------------------------
+  // ---- RENDER ---------------------------------------------------------
   return (
     <div className="fp-pos d-flex flex-column h-100">
       {/* ===================== BARRA SUPERIOR ========================== */}
@@ -151,14 +143,12 @@ export default function PosPage() {
         ref={searchInputRef}
         query={query}
         onQueryChange={setQuery}
-        onScanClick={handleScanClick}
-        onAddClient={handleAddClient}
+        onOpenAddProduct={() => setShowAddProduct(true)}
         onOpenHeld={() => setShowHeldModal(true)}
       />
 
-      {/* ===================== CUERPO (3 PANELES) ====================== */}
+      {/* =================== CUERPO (3 PANELES) ======================== */}
       <div className="fp-pos-body">
-        {/* PANEL IZQUIERDO: CARRITO */}
         <CartPanel
           cart={cart}
           onChangeQuantity={changeQuantity}
@@ -167,14 +157,14 @@ export default function PosPage() {
           onClearCart={clearCart}
         />
 
-        {/* PANEL CENTRAL: CATALOGO */}
         <ProductGrid
           items={sellableItems}
+          categorias={categorias}
           query={query}
-          onAddItem={addToCart}
+          onAddItem={handleAddItem}
+          cargando={cargando}
         />
 
-        {/* PANEL DERECHO: COBRO */}
         <CheckoutPanel
           totals={totals}
           ivaPct={ivaPct}
@@ -187,13 +177,22 @@ export default function PosPage() {
           notas={notas}
           onChangeNotas={setNotas}
           hayItems={hayItems}
+          errorVenta={errorVenta}
           onCobrar={handleCobrar}
           onApartar={handleApartar}
           onCotizar={handleCotizar}
         />
       </div>
 
-      {/* ===================== MODAL VENTAS APARTADAS ================== */}
+      {/* ===================== MODAL: AÑADIR PRODUCTO ================== */}
+      <AddProductModal
+        show={showAddProduct}
+        onClose={() => setShowAddProduct(false)}
+        items={sellableItems}
+        onAddItem={handleAddItem}
+      />
+
+      {/* ===================== MODAL: VENTAS APARTADAS ================= */}
       <HeldSalesModal
         show={showHeldModal}
         onClose={() => setShowHeldModal(false)}

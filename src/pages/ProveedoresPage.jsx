@@ -7,11 +7,12 @@
  */
 import { useMemo, useState } from 'react';
 import { getProveedores } from '../data/queries';
+import { useQuery } from '../hooks/useQuery';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
 
 export default function ProveedoresPage() {
-  const proveedores = useMemo(() => getProveedores(), []);
+  const { data: proveedores = [] } = useQuery(getProveedores);
   const [busqueda, setBusqueda] = useState('');
 
   const filtrados = useMemo(() => {

@@ -11,34 +11,49 @@
 import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { db } from '../data/mockDb';
+import { supabase } from '../lib/supabaseClient';
 
 export default function AppLayout() {
   const [itemsCriticos, setItemsCriticos] = useState(0);
   const [alertaCerrada, setAlertaCerrada] = useState(false);
 
   useEffect(() => {
-    const verificarStockBajo = () => {
+    // Cuenta variantes activas con stock en o bajo el minimo.
+    const verificarStockBajo = async () => {
+      // Supabase no soporta filtros entre columnas directamente en el cliente,
+      // por lo que traemos las columnas necesarias y filtramos en JS.
+      const { data: variantes } = await supabase
+        .from('producto_variantes')
+        .select('id, stock_actual, stock_minimo')
+        .eq('activo', true);
 
-      const totalBajoStock = db.producto_variantes.filter(
-        (v) => v.activo && v.stock_actual <= v.stock_minimo
+      if (!variantes) return;
+
+      const totalBajoStock = variantes.filter(
+        (v) => v.stock_actual <= v.stock_minimo
       ).length;
 
       setItemsCriticos(totalBajoStock);
-
-      if (totalBajoStock === 0) {
-        setAlertaCerrada(false);
-      }
+      if (totalBajoStock === 0) setAlertaCerrada(false);
     };
 
     verificarStockBajo();
 
-    // NOTA PARA MIGRACION: al implementar supabase o lo que sea
-    //                      configurar  canal de realtime
-    //                      para que la funcion verificarStockBajo funcione
-    //                      correctamente con la tabla "producto_variantes"
+    // Canal de Realtime: re-verifica el stock cuando la tabla cambia.
+    // Esto cubre tanto ventas (descuento de stock) como ingresos de compras.
+    const channel = supabase
+      .channel('stock-alertas')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'producto_variantes' },
+        () => verificarStockBajo(),
+      )
+      .subscribe();
 
-  }, [db.producto_variantes]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   return (
     <div className="fp-app d-flex vh-100 overflow-hidden">
@@ -46,14 +61,14 @@ export default function AppLayout() {
       <main className="fp-content flex-grow-1 d-flex flex-column overflow-hidden">
         <Outlet />
         {itemsCriticos > 0 && !alertaCerrada && (
-          <div 
-            className="alert alert-warning alert-dismissible fade show shadow-lg border-start border-4 border-warning m-3 position-absolute" 
+          <div
+            className="alert alert-warning alert-dismissible fade show shadow-lg border-start border-4 border-warning m-3 position-absolute"
             role="alert"
-            style={{ 
-              bottom: '10px', 
-              right: '10px', 
-              zIndex: 1100, 
-              maxWidth: '380px' 
+            style={{
+              bottom: '10px',
+              right: '10px',
+              zIndex: 1100,
+              maxWidth: '380px'
             }}
           >
             <div className="d-flex align-items-center">
@@ -63,9 +78,9 @@ export default function AppLayout() {
                 Hay {itemsCriticos} {itemsCriticos === 1 ? 'producto' : 'productos'} con stock bajo el mínimo.
               </div>
             </div>
-            <button 
-              type="button" 
-              className="btn-close" 
+            <button
+              type="button"
+              className="btn-close"
               onClick={() => setAlertaCerrada(true)}
               aria-label="Cerrar"
             ></button>

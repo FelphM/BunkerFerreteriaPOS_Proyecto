@@ -7,6 +7,7 @@
  */
 import { useMemo, useState } from 'react';
 import { getVentas, getDetalleVenta } from '../data/queries';
+import { useQuery } from '../hooks/useQuery';
 import {
   formatCLP,
   formatFechaHora,
@@ -25,11 +26,17 @@ const COLOR_PAGO = {
 };
 
 export default function VentasPage() {
-  const ventas = useMemo(() => getVentas(), []);
+  const { data: ventas = [] } = useQuery(getVentas);
 
   const [busqueda, setBusqueda] = useState('');
   const [metodo, setMetodo] = useState('');
   const [ventaSel, setVentaSel] = useState(null);
+
+  // Detalle de la venta abierta en el modal (DEBE ir despues de ventaSel).
+  const { data: detalle = [] } = useQuery(
+    () => ventaSel ? getDetalleVenta(ventaSel.id) : Promise.resolve([]),
+    [ventaSel?.id],
+  );
 
   const filtradas = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -56,11 +63,6 @@ export default function VentasPage() {
     };
   }, [ventas]);
 
-  // Detalle de la venta abierta en el modal.
-  const detalle = useMemo(
-    () => (ventaSel ? getDetalleVenta(ventaSel.id) : []),
-    [ventaSel],
-  );
 
   return (
     <>

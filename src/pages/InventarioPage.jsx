@@ -12,6 +12,7 @@ import {
   getCategorias,
   getMovimientosPorVariante,
 } from '../data/queries';
+import { useQuery } from '../hooks/useQuery';
 import { formatCLP, formatFechaHora } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
@@ -35,8 +36,8 @@ function estadoStock(v) {
 }
 
 export default function InventarioPage() {
-  const variantes = useMemo(() => getVariantesInventario(), []);
-  const categorias = useMemo(() => getCategorias(), []);
+  const { data: variantes = [] } = useQuery(getVariantesInventario);
+  const { data: categorias = [] } = useQuery(getCategorias);
 
   const [busqueda, setBusqueda] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
@@ -71,10 +72,10 @@ export default function InventarioPage() {
     };
   }, [variantes]);
 
-  // Movimientos de la variante abierta en el modal.
-  const movimientos = useMemo(
-    () => (varianteSel ? getMovimientosPorVariante(varianteSel.id) : []),
-    [varianteSel],
+  // Movimientos de la variante abierta en el modal (async).
+  const { data: movimientos = [] } = useQuery(
+    () => (varianteSel ? getMovimientosPorVariante(varianteSel.id) : Promise.resolve([])),
+    [varianteSel?.id],
   );
 
   return (

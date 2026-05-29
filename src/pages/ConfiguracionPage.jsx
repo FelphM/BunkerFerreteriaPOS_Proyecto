@@ -8,8 +8,8 @@
  * Vista de consulta: la edicion se conectara a Supabase (ver marcadores TODO).
  * ---------------------------------------------------------------------------
  */
-import { useMemo } from 'react';
 import { getConfiguracion, getUsuarios } from '../data/queries';
+import { useQuery } from '../hooks/useQuery';
 import { formatFecha } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
 
@@ -21,8 +21,8 @@ const COLOR_ROL = {
 };
 
 export default function ConfiguracionPage() {
-  const configuracion = useMemo(() => getConfiguracion(), []);
-  const usuarios = useMemo(() => getUsuarios(), []);
+  const { data: configuracion = [] } = useQuery(getConfiguracion);
+  const { data: usuarios = [] } = useQuery(getUsuarios);
 
   return (
     <>

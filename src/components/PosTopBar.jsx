@@ -3,24 +3,18 @@
  * ---------------------------------------------------------------------------
  * BARRA SUPERIOR del Punto de Venta.
  *
- *   - Buscador global: filtra la grilla por nombre, codigo interno o codigo
- *     de barras (escritura manual).
- *   - Boton "Escanear": enfoca el buscador; la lectura real de la pistola USB
- *     la maneja el hook useBarcodeScanner a nivel de PosPage.
- *   - Accesos rapidos: nuevo cliente e historial de ventas apartadas.
- *   - Fecha larga y nombre de caja.
- *
- * Componente controlado: el valor del buscador vive en PosPage.
+ *   - Buscador global: filtra la grilla central en tiempo real.
+ *   - Botón "Añadir Producto": abre el modal de busqueda manual para agregar
+ *     items al carrito sin necesidad de la grilla o la pistola.
+ *   - Botón historial de ventas apartadas.
+ *   - Fecha y nombre de caja.
  * ---------------------------------------------------------------------------
  */
 import { forwardRef } from 'react';
 import { formatLongDate } from '../utils/format';
-import { getConfigValor } from '../data/queries';
 
-// forwardRef: PosPage necesita el ref del input para poder enfocarlo
-// (boton "Escanear" y reseteo de foco tras agregar productos).
 const PosTopBar = forwardRef(function PosTopBar(
-  { query, onQueryChange, onScanClick, onAddClient, onOpenHeld },
+  { query, onQueryChange, onOpenAddProduct, onOpenHeld },
   inputRef,
 ) {
   return (
@@ -34,32 +28,35 @@ const PosTopBar = forwardRef(function PosTopBar(
           ref={inputRef}
           type="text"
           className="form-control border-start-0 ps-0"
-          placeholder="Buscar producto por nombre, codigo o categoria..."
+          placeholder="Filtrar grilla por nombre, código o categoría..."
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           autoFocus
         />
+        {query && (
+          <button
+            type="button"
+            className="input-group-text bg-white border-start-0"
+            onClick={() => onQueryChange('')}
+            aria-label="Limpiar filtro"
+          >
+            <i className="bi bi-x-lg text-secondary" />
+          </button>
+        )}
       </div>
 
-      {/* --------------------- ACCIONES RAPIDAS ------------------------ */}
+      {/* ------------------ BOTON AÑADIR PRODUCTO ---------------------- */}
       <button
         type="button"
-        className="btn btn-outline-secondary btn-lg d-flex align-items-center gap-2 text-nowrap"
-        onClick={onScanClick}
+        className="btn btn-warning btn-lg d-flex align-items-center gap-2 text-nowrap fw-semibold"
+        onClick={onOpenAddProduct}
+        title="Buscar y agregar un producto al carrito"
       >
-        <i className="bi bi-upc-scan" />
-        Escanear
+        <i className="bi bi-plus-circle-fill" />
+        Añadir Producto
       </button>
 
-      <button
-        type="button"
-        className="btn btn-outline-secondary btn-lg"
-        title="Nuevo cliente"
-        onClick={onAddClient}
-      >
-        <i className="bi bi-person-plus" />
-      </button>
-
+      {/* ----------------- BOTON VENTAS APARTADAS ---------------------- */}
       <button
         type="button"
         className="btn btn-outline-secondary btn-lg"
@@ -70,9 +67,9 @@ const PosTopBar = forwardRef(function PosTopBar(
       </button>
 
       {/* ----------------------- FECHA / CAJA -------------------------- */}
-      <div className="text-end lh-sm">
+      <div className="text-end lh-sm flex-shrink-0">
         <div className="text-secondary text-nowrap">{formatLongDate()}</div>
-        <strong className="text-nowrap">{getConfigValor('nombre_caja')}</strong>
+        <strong className="text-nowrap">Caja #1</strong>
       </div>
     </header>
   );

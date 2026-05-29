@@ -4,18 +4,25 @@
  * Barra de navegacion lateral fija (oscura) del sistema.
  *
  *   - Marca / logo arriba.
- *   - Lista de secciones (desde navItems.js) con <NavLink>: la seccion activa
- *     se resalta automaticamente segun la URL.
- *   - Tarjeta de usuario abajo.
- *
- * Es puramente presentacional; el ruteo lo maneja react-router-dom.
+ *   - Lista de secciones (desde navItems.js) con <NavLink>.
+ *   - Zona de usuario abajo: muestra nombre y rol real de `usuarios_perfiles`
+ *     (via AuthContext) + boton de Cerrar Sesion.
  * ---------------------------------------------------------------------------
  */
 import { NavLink } from 'react-router-dom';
 import { navItems } from './navItems';
-import { getConfigValor } from '../data/queries';
+import { useAuth } from '../context/useAuth';
+
+// Etiqueta en espanol para cada rol de la tabla `usuarios_perfiles`.
+const LABEL_ROL = {
+  admin: 'Administrador',
+  cajero: 'Cajero',
+  bodega: 'Bodega',
+};
 
 export default function Sidebar() {
+  const { usuario, signOut } = useAuth();
+
   return (
     <aside className="fp-sidebar d-flex flex-column flex-shrink-0">
       {/* --------------------------- MARCA ----------------------------- */}
@@ -23,7 +30,9 @@ export default function Sidebar() {
         <i className="bi bi-wrench-adjustable-circle fs-3 text-warning" />
         <div className="lh-1">
           <div className="fw-bold fs-5">Ferromat</div>
-          <small className="fp-sidebar-tagline">Sistema de Ventas</small>
+          <small className="fp-sidebar-tagline">
+            Sistema de Ventas
+          </small>
         </div>
       </div>
 
@@ -34,7 +43,6 @@ export default function Sidebar() {
             <li className="nav-item" key={item.path}>
               <NavLink
                 to={item.path}
-                // `end` evita que "/" quede activo en todas las rutas.
                 end={item.path === '/'}
                 className={({ isActive }) =>
                   `fp-nav-link d-flex align-items-center gap-3 ${
@@ -50,18 +58,36 @@ export default function Sidebar() {
         </ul>
       </nav>
 
-      {/* ------------------------- USUARIO ----------------------------- */}
-      <div className="fp-sidebar-user d-flex align-items-center gap-2 px-3">
-        <div className="fp-avatar d-flex align-items-center justify-content-center">
-          <i className="bi bi-person-fill" />
+      {/* ---------------------- USUARIO + LOGOUT ------------------------ */}
+      <div className="fp-sidebar-user-wrap px-2 pb-2">
+        {/* Info del usuario autenticado */}
+        <div className="fp-sidebar-user d-flex align-items-center gap-2 px-2 py-2 rounded">
+          <div className="fp-avatar d-flex align-items-center justify-content-center flex-shrink-0">
+            <i className="bi bi-person-fill" />
+          </div>
+          <div className="lh-1 min-w-0 flex-grow-1">
+            <div
+              className="fw-semibold text-white text-truncate"
+              title={usuario.nombre}
+            >
+              {usuario.nombre}
+            </div>
+            <small className="fp-sidebar-tagline">
+              {LABEL_ROL[usuario.rol] ?? usuario.rol}
+            </small>
+          </div>
         </div>
-        <div className="lh-1">
-          {/* TODO: Supabase - reemplazar por el usuario autenticado (auth.users). */}
-          <div className="fw-semibold">Admin</div>
-          <small className="fp-sidebar-tagline">
-            {getConfigValor('nombre_tienda')}
-          </small>
-        </div>
+
+        {/* Boton de cerrar sesion */}
+        <button
+          type="button"
+          className="fp-btn-logout w-100 d-flex align-items-center gap-2"
+          onClick={signOut}
+          title="Cerrar sesion"
+        >
+          <i className="bi bi-box-arrow-left" />
+          <span>Cerrar sesion</span>
+        </button>
       </div>
     </aside>
   );

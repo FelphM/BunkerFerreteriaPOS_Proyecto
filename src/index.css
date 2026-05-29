@@ -1,13 +1,20 @@
 /* index.css
- * Estilos base globales. El POS usa Bootstrap 5 para todo el layout,
- * por lo que aqui solo dejamos un reset minimo a pantalla completa.
+ * Reset base global.
+ * - html/body a 100% para que el POS (vh-100) ocupe la pantalla completa.
+ * - #root sin height fijo: cada vista define su propia altura
+ *   (fp-app usa vh-100; fp-login-bg usa min-height:100dvh).
  */
 html,
-body,
-#root {
+body {
   margin: 0;
   padding: 0;
   height: 100%;
+  width: 100%;
+}
+
+#root {
+  margin: 0;
+  padding: 0;
   width: 100%;
 }
 

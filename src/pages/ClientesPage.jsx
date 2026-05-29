@@ -10,12 +10,13 @@
  */
 import { useMemo, useState } from 'react';
 import { getClientesDerivados } from '../data/queries';
+import { useQuery } from '../hooks/useQuery';
 import { formatCLP, formatFecha } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
 
 export default function ClientesPage() {
-  const clientes = useMemo(() => getClientesDerivados(), []);
+  const { data: clientes = [] } = useQuery(getClientesDerivados);
   const [busqueda, setBusqueda] = useState('');
 
   const filtrados = useMemo(() => {
@@ -49,14 +50,7 @@ export default function ClientesPage() {
 
       <div className="fp-page-body">
         {/* Aviso: la vista es derivada, no hay tabla clientes */}
-        <div className="alert alert-info d-flex align-items-center gap-2 py-2">
-          <i className="bi bi-info-circle" />
-          <small>
-            Los clientes se derivan de las ventas registradas. Para una ficha
-            de cliente completa se recomienda crear una tabla{' '}
-            <code>clientes</code> dedicada en el esquema.
-          </small>
-        </div>
+
 
         {/* KPIs */}
         <div className="row g-3 mb-3">

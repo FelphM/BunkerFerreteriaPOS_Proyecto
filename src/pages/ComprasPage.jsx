@@ -9,6 +9,7 @@
  */
 import { useMemo, useState } from 'react';
 import { getCompras, getDetalleCompra } from '../data/queries';
+import { useQuery } from '../hooks/useQuery';
 import { formatCLP, formatFechaHora } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
@@ -22,7 +23,7 @@ const COLOR_ESTADO = {
 };
 
 export default function ComprasPage() {
-  const compras = useMemo(() => getCompras(), []);
+  const { data: compras = [] } = useQuery(getCompras);
 
   const [busqueda, setBusqueda] = useState('');
   const [estado, setEstado] = useState('');
@@ -50,9 +51,9 @@ export default function ComprasPage() {
     };
   }, [compras]);
 
-  const detalle = useMemo(
-    () => (compraSel ? getDetalleCompra(compraSel.id) : []),
-    [compraSel],
+  const { data: detalle = [] } = useQuery(
+    () => compraSel ? getDetalleCompra(compraSel.id) : Promise.resolve([]),
+    [compraSel?.id],
   );
 
   return (

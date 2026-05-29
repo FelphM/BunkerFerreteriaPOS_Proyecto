@@ -4,261 +4,455 @@
  * Capa de ACCESO A DATOS del sistema (el "seam" para Supabase).
  *
  * Cada funcion devuelve datos ya listos para la UI (con sus JOIN resueltos).
- * Hoy leen del mock `db`; en produccion, el equipo reemplaza el cuerpo de
- * cada funcion por la consulta Supabase indicada en su comentario `// TODO`.
- * La firma y la forma del resultado NO deben cambiar, asi los componentes
- * siguen funcionando sin tocarse.
+ * Lee directamente desde Supabase usando el cliente autenticado.
  *
- * Convencion: todo lo que aqui se expone es de SOLO LECTURA. Las operaciones
- * de escritura (insert/update/delete) se implementaran directamente contra
- * Supabase cuando se conecte el backend.
+ * NOTA IMPORTANTE SOBRE RLS:
+ *   Todas las tablas tienen Row Level Security activo. Las queries solo
+ *   funcionan con una sesion activa (auth.role() = 'authenticated').
+ *   El cliente Supabase manda el token de sesion automaticamente.
+ *
+ * NOTA SOBRE `icono`:
+ *   El campo `icono` de categorias es SOLO-UI (no existe en la BD).
+ *   Se mapea aqui segun el nombre de la categoria. Si agregas categorias
+ *   nuevas en Supabase, añade su icono en ICONOS_CATEGORIA.
  * ---------------------------------------------------------------------------
  */
-import { db } from './mockDb';
+import { supabase } from '../lib/supabaseClient';
 
-// --- Helpers internos de "JOIN" --------------------------------------------
-const categoriaPorId = (id) => db.categorias.find((c) => c.id === id);
-const proveedorPorId = (id) => db.proveedores.find((p) => p.id === id);
-const productoPorId = (id) => db.productos.find((p) => p.id === id);
-const variantePorId = (id) => db.producto_variantes.find((v) => v.id === id);
+// Mapa nombre de categoria -> clase de Bootstrap Icon (solo para la UI).
+const ICONOS_CATEGORIA = {
+  'Herramientas':  'bi-tools',
+  'Tornilleria':   'bi-nut',
+  'Electricidad':  'bi-lightning-charge',
+  'Plomeria':      'bi-droplet',
+  'Pinturas':      'bi-palette',
+  'Construccion':  'bi-bricks',
+};
+const ICONO_DEFAULT = 'bi-box-seam';
 
-/** Ordena por fecha `creado_en` descendente (mas reciente primero). */
-const porFechaDesc = (a, b) => new Date(b.creado_en) - new Date(a.creado_en);
+// ---------------------------------------------------------------------------
+// Helper: lanza el error de Supabase como excepcion de JS para que los
+// componentes puedan capturarlo con try/catch o el usuario vea el mensaje.
+// ---------------------------------------------------------------------------
+function throwIfError({ error }) {
+  if (error) throw new Error(error.message ?? 'Error de base de datos');
+}
 
 // ===========================================================================
 // CONFIGURACION
 // ===========================================================================
 
 /** Lista completa de parametros de configuracion. */
-// TODO: Supabase -> supabase.from('configuracion').select('*')
-export const getConfiguracion = () => [...db.configuracion];
+export async function getConfiguracion() {
+  const res = await supabase.from('configuracion').select('*');
+  throwIfError(res);
+  return res.data ?? [];
+}
 
 /** Valor (string) de un parametro por su clave. */
-// TODO: Supabase -> select('valor').eq('clave', clave).single()
-export const getConfigValor = (clave) =>
-  db.configuracion.find((c) => c.clave === clave)?.valor ?? null;
+export async function getConfigValor(clave) {
+  const res = await supabase
+    .from('configuracion')
+    .select('valor')
+    .eq('clave', clave)
+    .single();
+  if (res.error) return null;
+  return res.data?.valor ?? null;
+}
 
 /** Valor numerico de un parametro (ej: porcentaje_iva). */
-export const getConfigNumero = (clave) => Number(getConfigValor(clave)) || 0;
+export async function getConfigNumero(clave) {
+  const val = await getConfigValor(clave);
+  return Number(val) || 0;
+}
 
 // ===========================================================================
-// CATALOGO (categorias, proveedores, productos, variantes)
+// CATALOGO
 // ===========================================================================
 
-/** Categorias de producto. */
-// TODO: Supabase -> supabase.from('categorias').select('*').order('nombre')
-export const getCategorias = () => [...db.categorias];
-
-/** Proveedores, con la cuenta de productos asociados. */
-// TODO: Supabase -> from('proveedores').select('*, productos(count)')
-export const getProveedores = () =>
-  db.proveedores.map((p) => ({
-    ...p,
-    productos_count: db.productos.filter((pr) => pr.proveedor_id === p.id)
-      .length,
+/** Categorias de producto, con icono de UI asignado por nombre. */
+export async function getCategorias() {
+  const res = await supabase
+    .from('categorias')
+    .select('*')
+    .order('nombre');
+  throwIfError(res);
+  return (res.data ?? []).map((c) => ({
+    ...c,
+    icono: ICONOS_CATEGORIA[c.nombre] ?? ICONO_DEFAULT,
   }));
+}
+
+/** Proveedores con conteo de productos asociados. */
+export async function getProveedores() {
+  const res = await supabase
+    .from('proveedores')
+    .select('*, productos(count)')
+    .order('nombre');
+  throwIfError(res);
+  return (res.data ?? []).map((p) => ({
+    ...p,
+    productos_count: p.productos?.[0]?.count ?? 0,
+  }));
+}
 
 /**
- * Variantes con todos sus datos de producto/categoria/proveedor resueltos.
- * Es la fuente de la vista Inventario.
+ * Variantes con datos de producto/categoria/proveedor resueltos.
+ * Fuente de la vista Inventario y del catalogo del POS.
  */
-// TODO: Supabase -> from('producto_variantes')
-//   .select('*, productos(nombre, codigo_interno, activo, categorias(nombre), proveedores(nombre)))')
-export const getVariantesInventario = () =>
-  db.producto_variantes.map((v) => {
-    const producto = productoPorId(v.producto_id);
-    const categoria = categoriaPorId(producto?.categoria_id);
-    const proveedor = proveedorPorId(producto?.proveedor_id);
-    const hermanas = db.producto_variantes.filter(
-      (x) => x.producto_id === v.producto_id,
-    );
+export async function getVariantesInventario() {
+  const res = await supabase
+    .from('producto_variantes')
+    .select(`
+      id,
+      producto_id,
+      codigo_barras,
+      variante_nombre,
+      unidad_venta,
+      activo,
+      precio_compra,
+      margen_ganancia,
+      precio_venta,
+      stock_actual,
+      stock_minimo,
+      actualizado_en,
+      productos (
+        id,
+        nombre,
+        codigo_interno,
+        activo,
+        categoria_id,
+        proveedor_id,
+        categorias ( id, nombre ),
+        proveedores ( id, nombre )
+      )
+    `)
+    .order('actualizado_en', { ascending: false });
+  throwIfError(res);
+
+  return (res.data ?? []).map((v) => {
+    const prod = v.productos ?? {};
     return {
-      ...v,
-      producto_nombre: producto?.nombre ?? '(producto eliminado)',
-      codigo_interno: producto?.codigo_interno ?? '',
-      producto_activo: producto?.activo ?? false,
-      categoria_id: producto?.categoria_id ?? null,
-      categoria_nombre: categoria?.nombre ?? 'Sin categoria',
-      proveedor_id: producto?.proveedor_id ?? null,
-      proveedor_nombre: proveedor?.nombre ?? 'Sin proveedor',
-      // valorizacion de la linea (stock a precio de costo)
-      valor_stock: v.stock_actual * v.precio_compra,
-      tieneVariantes: hermanas.length > 1,
-    };
-  });
-
-/**
- * Items vendibles para el POS: variantes ACTIVAS de productos ACTIVOS,
- * aplanadas con el formato que espera la grilla y el carrito.
- */
-export const getSellableItems = () =>
-  getVariantesInventario()
-    .filter((v) => v.activo && v.producto_activo)
-    .map((v) => ({
+      // Variante
       id: v.id,
-      codigo: v.codigo_interno,
-      codigo_barras: v.codigo_barras,
-      id_producto: v.producto_id,
-      nombre: v.producto_nombre,
-      id_categoria: v.categoria_id,
+      producto_id: v.producto_id,
+      codigo_barras: v.codigo_barras ?? '',
       variante_nombre: v.variante_nombre,
       unidad_venta: v.unidad_venta,
+      activo: v.activo,
+      precio_compra: v.precio_compra,
+      margen_ganancia: v.margen_ganancia,
       precio_venta: v.precio_venta,
       stock_actual: v.stock_actual,
-      tieneVariantes: v.tieneVariantes,
-    }));
+      stock_minimo: v.stock_minimo,
+      actualizado_en: v.actualizado_en,
+      // Producto padre
+      producto_nombre: prod.nombre ?? '(eliminado)',
+      codigo_interno: prod.codigo_interno ?? '',
+      producto_activo: prod.activo ?? false,
+      categoria_id: prod.categoria_id ?? null,
+      categoria_nombre: prod.categorias?.nombre ?? 'Sin categoria',
+      proveedor_id: prod.proveedor_id ?? null,
+      proveedor_nombre: prod.proveedores?.nombre ?? 'Sin proveedor',
+      // Calculos UI
+      valor_stock: (v.stock_actual ?? 0) * (v.precio_compra ?? 0),
+      tieneVariantes: false, // se calcula abajo
+    };
+  });
+}
+
+/**
+ * Items vendibles para el POS: variantes activas de productos activos.
+ * Marca `tieneVariantes` para saber si mostrar el nombre de la variante.
+ */
+export async function getSellableItems() {
+  const variantes = await getVariantesInventario();
+  const activas = variantes.filter((v) => v.activo && v.producto_activo);
+
+  // Cuenta cuantas variantes tiene cada producto para marcar `tieneVariantes`.
+  const conteo = {};
+  for (const v of activas) {
+    conteo[v.producto_id] = (conteo[v.producto_id] ?? 0) + 1;
+  }
+
+  // Obtener los iconos de categoria.
+  const cats = await getCategorias();
+  const iconoPorCat = Object.fromEntries(cats.map((c) => [c.id, c.icono]));
+
+  return activas.map((v) => ({
+    id: v.id,
+    codigo: v.codigo_interno,
+    codigo_barras: v.codigo_barras,
+    id_producto: v.producto_id,
+    nombre: v.producto_nombre,
+    id_categoria: v.categoria_id,
+    icono_categoria: iconoPorCat[v.categoria_id] ?? ICONO_DEFAULT,
+    variante_nombre: v.variante_nombre,
+    unidad_venta: v.unidad_venta,
+    precio_venta: v.precio_venta,
+    stock_actual: v.stock_actual,
+    tieneVariantes: conteo[v.producto_id] > 1,
+  }));
+}
 
 // ===========================================================================
 // VENTAS
 // ===========================================================================
 
-/** Cabeceras de venta, mas recientes primero. */
-// TODO: Supabase -> from('ventas').select('*').order('creado_en', { ascending:false })
-export const getVentas = () => [...db.ventas].sort(porFechaDesc);
+/** Cabeceras de ventas, mas recientes primero. */
+export async function getVentas() {
+  const res = await supabase
+    .from('ventas')
+    .select('*')
+    .order('creado_en', { ascending: false });
+  throwIfError(res);
+  return res.data ?? [];
+}
 
-/** Lineas de una venta, con datos de producto/variante resueltos. */
-// TODO: Supabase -> from('detalle_ventas')
-//   .select('*, producto_variantes(variante_nombre, unidad_venta, productos(nombre))')
-//   .eq('venta_id', ventaId)
-export const getDetalleVenta = (ventaId) =>
-  db.detalle_ventas
-    .filter((d) => d.venta_id === ventaId)
-    .map((d) => {
-      const variante = variantePorId(d.variante_id);
-      const producto = productoPorId(variante?.producto_id);
-      return {
-        ...d,
-        variante_nombre: variante?.variante_nombre ?? '',
-        unidad_venta: variante?.unidad_venta ?? 'unidad',
-        codigo_barras: variante?.codigo_barras ?? '',
-        producto_nombre: producto?.nombre ?? '(producto eliminado)',
-      };
-    });
+/** Lineas de una venta con datos de variante/producto resueltos. */
+export async function getDetalleVenta(ventaId) {
+  const res = await supabase
+    .from('detalle_ventas')
+    .select(`
+      id,
+      venta_id,
+      variante_id,
+      cantidad,
+      precio_unitario,
+      subtotal,
+      producto_variantes (
+        variante_nombre,
+        unidad_venta,
+        codigo_barras,
+        productos ( nombre )
+      )
+    `)
+    .eq('venta_id', ventaId);
+  throwIfError(res);
 
-/** Todas las lineas de venta (para reportes de productos mas vendidos). */
-export const getDetalleVentasGlobal = () =>
-  db.detalle_ventas.map((d) => {
-    const variante = variantePorId(d.variante_id);
-    const producto = productoPorId(variante?.producto_id);
-    const venta = db.ventas.find((v) => v.id === d.venta_id);
-    return {
-      ...d,
-      variante_nombre: variante?.variante_nombre ?? '',
-      producto_id: variante?.producto_id ?? null,
-      producto_nombre: producto?.nombre ?? '(producto eliminado)',
-      categoria_id: producto?.categoria_id ?? null,
-      venta_fecha: venta?.creado_en ?? null,
-    };
-  });
+  return (res.data ?? []).map((d) => ({
+    id: d.id,
+    venta_id: d.venta_id,
+    variante_id: d.variante_id,
+    cantidad: d.cantidad,
+    precio_unitario: d.precio_unitario,
+    subtotal: d.subtotal,
+    variante_nombre: d.producto_variantes?.variante_nombre ?? '',
+    unidad_venta: d.producto_variantes?.unidad_venta ?? 'unidad',
+    codigo_barras: d.producto_variantes?.codigo_barras ?? '',
+    producto_nombre: d.producto_variantes?.productos?.nombre ?? '(eliminado)',
+  }));
+}
+
+/** Todas las lineas de venta con datos de producto (para reportes). */
+export async function getDetalleVentasGlobal() {
+  const res = await supabase
+    .from('detalle_ventas')
+    .select(`
+      id,
+      venta_id,
+      variante_id,
+      cantidad,
+      precio_unitario,
+      subtotal,
+      producto_variantes (
+        variante_nombre,
+        producto_id,
+        productos ( nombre, categoria_id )
+      ),
+      ventas ( creado_en )
+    `);
+  throwIfError(res);
+
+  return (res.data ?? []).map((d) => ({
+    id: d.id,
+    venta_id: d.venta_id,
+    variante_id: d.variante_id,
+    cantidad: d.cantidad,
+    precio_unitario: d.precio_unitario,
+    subtotal: d.subtotal,
+    variante_nombre: d.producto_variantes?.variante_nombre ?? '',
+    producto_id: d.producto_variantes?.producto_id ?? null,
+    producto_nombre: d.producto_variantes?.productos?.nombre ?? '(eliminado)',
+    categoria_id: d.producto_variantes?.productos?.categoria_id ?? null,
+    venta_fecha: d.ventas?.creado_en ?? null,
+  }));
+}
 
 // ===========================================================================
 // COMPRAS
 // ===========================================================================
 
-/** Cabeceras de compra con el nombre del proveedor resuelto. */
-// TODO: Supabase -> from('compras').select('*, proveedores(nombre)').order('creado_en', { ascending:false })
-export const getCompras = () =>
-  [...db.compras].sort(porFechaDesc).map((c) => ({
-    ...c,
-    proveedor_nombre:
-      proveedorPorId(c.proveedor_id)?.nombre ?? '(proveedor eliminado)',
-  }));
+/** Cabeceras de compra con nombre del proveedor, mas recientes primero. */
+export async function getCompras() {
+  const res = await supabase
+    .from('compras')
+    .select('*, proveedores ( nombre )')
+    .order('creado_en', { ascending: false });
+  throwIfError(res);
 
-/** Lineas de una compra, con datos de producto/variante resueltos. */
-// TODO: Supabase -> from('detalle_compras')
-//   .select('*, producto_variantes(variante_nombre, unidad_venta, productos(nombre))')
-//   .eq('compra_id', compraId)
-export const getDetalleCompra = (compraId) =>
-  db.detalle_compras
-    .filter((d) => d.compra_id === compraId)
-    .map((d) => {
-      const variante = variantePorId(d.variante_id);
-      const producto = productoPorId(variante?.producto_id);
-      return {
-        ...d,
-        variante_nombre: variante?.variante_nombre ?? '',
-        unidad_venta: variante?.unidad_venta ?? 'unidad',
-        producto_nombre: producto?.nombre ?? '(producto eliminado)',
-      };
-    });
+  return (res.data ?? []).map((c) => ({
+    ...c,
+    proveedor_nombre: c.proveedores?.nombre ?? '(eliminado)',
+  }));
+}
+
+/** Lineas de una compra con datos de variante/producto resueltos. */
+export async function getDetalleCompra(compraId) {
+  const res = await supabase
+    .from('detalle_compras')
+    .select(`
+      id,
+      compra_id,
+      variante_id,
+      cantidad,
+      precio_unitario,
+      subtotal,
+      producto_variantes (
+        variante_nombre,
+        unidad_venta,
+        productos ( nombre )
+      )
+    `)
+    .eq('compra_id', compraId);
+  throwIfError(res);
+
+  return (res.data ?? []).map((d) => ({
+    id: d.id,
+    compra_id: d.compra_id,
+    variante_id: d.variante_id,
+    cantidad: d.cantidad,
+    precio_unitario: d.precio_unitario,
+    subtotal: d.subtotal,
+    variante_nombre: d.producto_variantes?.variante_nombre ?? '',
+    unidad_venta: d.producto_variantes?.unidad_venta ?? 'unidad',
+    producto_nombre: d.producto_variantes?.productos?.nombre ?? '(eliminado)',
+  }));
+}
 
 // ===========================================================================
 // MOVIMIENTOS DE INVENTARIO
 // ===========================================================================
 
-/** Bitacora de movimientos de stock, mas recientes primero. */
-// TODO: Supabase -> from('movimientos_inventario')
-//   .select('*, producto_variantes(variante_nombre, productos(nombre))')
-//   .order('creado_en', { ascending:false })
-export const getMovimientos = () =>
-  [...db.movimientos_inventario].sort(porFechaDesc).map((m) => {
-    const variante = variantePorId(m.variante_id);
-    const producto = productoPorId(variante?.producto_id);
-    return {
-      ...m,
-      variante_nombre: variante?.variante_nombre ?? '',
-      producto_nombre: producto?.nombre ?? '(producto eliminado)',
-    };
-  });
+/** Bitacora de movimientos, mas recientes primero. */
+export async function getMovimientos() {
+  const res = await supabase
+    .from('movimientos_inventario')
+    .select(`
+      id,
+      variante_id,
+      tipo_movimiento,
+      cantidad,
+      stock_anterior,
+      stock_nuevo,
+      referencia_id,
+      observaciones,
+      creado_en,
+      producto_variantes (
+        variante_nombre,
+        productos ( nombre )
+      )
+    `)
+    .order('creado_en', { ascending: false });
+  throwIfError(res);
 
-/** Movimientos de una variante puntual (detalle de Inventario). */
-export const getMovimientosPorVariante = (varianteId) =>
-  getMovimientos().filter((m) => m.variante_id === varianteId);
+  return (res.data ?? []).map((m) => ({
+    ...m,
+    variante_nombre: m.producto_variantes?.variante_nombre ?? '',
+    producto_nombre: m.producto_variantes?.productos?.nombre ?? '(eliminado)',
+  }));
+}
+
+/** Movimientos de una variante puntual (modal de Inventario). */
+export async function getMovimientosPorVariante(varianteId) {
+  const res = await supabase
+    .from('movimientos_inventario')
+    .select(`
+      id,
+      variante_id,
+      tipo_movimiento,
+      cantidad,
+      stock_anterior,
+      stock_nuevo,
+      referencia_id,
+      observaciones,
+      creado_en,
+      producto_variantes (
+        variante_nombre,
+        productos ( nombre )
+      )
+    `)
+    .eq('variante_id', varianteId)
+    .order('creado_en', { ascending: false });
+  throwIfError(res);
+
+  return (res.data ?? []).map((m) => ({
+    ...m,
+    variante_nombre: m.producto_variantes?.variante_nombre ?? '',
+    producto_nombre: m.producto_variantes?.productos?.nombre ?? '(eliminado)',
+  }));
+}
 
 // ===========================================================================
-// CLIENTES (derivados de la tabla `ventas`)
+// CLIENTES (derivados de ventas)
 // ===========================================================================
 
 /**
- * El esquema no tiene tabla `clientes`: los datos del cliente viven en cada
- * fila de `ventas`. Esta funcion DERIVA la lista de clientes agrupando las
- * ventas por RUT (o por nombre cuando no hay RUT).
- *
- * EQUIPO: si a futuro se crea una tabla `clientes` dedicada, reemplazar esta
- * funcion por un simple SELECT a esa tabla.
+ * Clientes derivados de la tabla `ventas`, agrupados por RUT.
+ * Si a futuro existe tabla `clientes`, reemplazar por SELECT directo.
  */
-export const getClientesDerivados = () => {
+export async function getClientesDerivados() {
+  const res = await supabase
+    .from('ventas')
+    .select('nombre_cliente, rut_cliente, correo_cliente, total, creado_en');
+  throwIfError(res);
+
   const mapa = new Map();
-
-  for (const venta of db.ventas) {
-    // Clave de agrupacion: RUT si existe; si no, el nombre.
-    const clave = venta.rut_cliente || `sin-rut:${venta.nombre_cliente}`;
-
+  for (const v of (res.data ?? [])) {
+    const clave = v.rut_cliente || `sin-rut:${v.nombre_cliente}`;
     if (!mapa.has(clave)) {
       mapa.set(clave, {
         clave,
-        nombre: venta.nombre_cliente,
-        rut: venta.rut_cliente,
-        correo: venta.correo_cliente,
+        nombre: v.nombre_cliente,
+        rut: v.rut_cliente,
+        correo: v.correo_cliente,
         compras: 0,
         total_gastado: 0,
-        ultima_compra: venta.creado_en,
+        ultima_compra: v.creado_en,
       });
     }
-
-    const cliente = mapa.get(clave);
-    cliente.compras += 1;
-    cliente.total_gastado += venta.total;
-    if (new Date(venta.creado_en) > new Date(cliente.ultima_compra)) {
-      cliente.ultima_compra = venta.creado_en;
+    const c = mapa.get(clave);
+    c.compras += 1;
+    c.total_gastado += v.total ?? 0;
+    if (new Date(v.creado_en) > new Date(c.ultima_compra)) {
+      c.ultima_compra = v.creado_en;
     }
-    // Completa el correo si una venta posterior lo tiene.
-    if (!cliente.correo && venta.correo_cliente) {
-      cliente.correo = venta.correo_cliente;
-    }
+    if (!c.correo && v.correo_cliente) c.correo = v.correo_cliente;
   }
 
   return [...mapa.values()].sort((a, b) => b.total_gastado - a.total_gastado);
-};
+}
 
 // ===========================================================================
 // USUARIOS Y VENTAS EN ESPERA
 // ===========================================================================
 
-/** Perfiles de usuario del sistema. */
-// TODO: Supabase -> from('usuarios_perfiles').select('*').order('nombre')
-export const getUsuarios = () => [...db.usuarios_perfiles];
+/** Perfiles de usuario (tabla `usuarios_perfiles`, vinculada a auth.users). */
+export async function getUsuarios() {
+  const res = await supabase
+    .from('usuarios_perfiles')
+    .select('*')
+    .order('nombre');
+  throwIfError(res);
+  return res.data ?? [];
+}
 
-/** Ventas en espera (carritos apartados). */
-// TODO: Supabase -> from('ventas_en_espera').select('*').order('creado_en')
-export const getVentasEnEspera = () => [...db.ventas_en_espera];
+/** Ventas en espera (carritos apartados desde el POS). */
+export async function getVentasEnEspera() {
+  const res = await supabase
+    .from('ventas_en_espera')
+    .select('*')
+    .order('creado_en');
+  throwIfError(res);
+  return res.data ?? [];
+}
