@@ -15,10 +15,11 @@
 import { formatCLP, safeQty } from '../utils/format';
 
 // Metodos de pago. En produccion pueden venir de la tabla `configuracion`.
+// Los valores deben coincidir exactamente con el CHECK constraint de la tabla `ventas`.
 const METODOS_PAGO = [
-  { value: 'efectivo', label: 'Efectivo', icono: 'bi-cash-coin' },
-  { value: 'tarjeta', label: 'Tarjeta', icono: 'bi-credit-card' },
-  { value: 'transferencia', label: 'Transfer.', icono: 'bi-bank' },
+  { value: 'Efectivo', label: 'Efectivo', icono: 'bi-cash-coin' },
+  { value: 'Transbank', label: 'Tarjeta', icono: 'bi-credit-card' },
+  { value: 'Transferencia', label: 'Transfer.', icono: 'bi-bank' },
 ];
 
 // Montos rapidos sugeridos (CLP).
@@ -41,7 +42,7 @@ export default function CheckoutPanel({
   onApartar,
   onCotizar,
 }) {
-  const esEfectivo = metodoPago === 'efectivo';
+  const esEfectivo = metodoPago === 'Efectivo';
   const recibido = safeQty(montoRecibido);
   const vuelto = recibido - totals.total;
   // En efectivo no se puede cobrar si el monto recibido no alcanza.

@@ -2,24 +2,48 @@
  * PosTopBar.jsx
  * ---------------------------------------------------------------------------
  * BARRA SUPERIOR del Punto de Venta.
- *
- *   - Buscador global: filtra la grilla central en tiempo real.
- *   - Botón "Añadir Producto": abre el modal de busqueda manual para agregar
- *     items al carrito sin necesidad de la grilla o la pistola.
- *   - Botón historial de ventas apartadas.
- *   - Fecha y nombre de caja.
+ * Incluye indicador de estado de conexion y contador de ventas pendientes.
  * ---------------------------------------------------------------------------
  */
 import { forwardRef } from 'react';
 import { formatLongDate } from '../utils/format';
 
 const PosTopBar = forwardRef(function PosTopBar(
-  { query, onQueryChange, onOpenAddProduct, onOpenHeld },
+  {
+    query, onQueryChange, onOpenAddProduct, onOpenHeld,
+    onOpenBajoStock, bajoStockCount = 0,
+    isOnline = true, pendingCount = 0, syncing = false, onSincronizar,
+  },
   inputRef,
 ) {
   return (
     <header className="fp-pos-topbar d-flex align-items-center gap-3">
-      {/* ------------------------- BUSCADOR ---------------------------- */}
+      {/* Indicador offline */}
+      {!isOnline && (
+        <div className="d-flex align-items-center gap-1 text-nowrap px-2 py-1 rounded"
+          style={{ background: '#fff3cd', color: '#856404', fontSize: '0.78rem' }}>
+          <i className="bi bi-wifi-off" />
+          <span className="d-none d-md-inline">Sin conexion</span>
+        </div>
+      )}
+
+      {/* Badge de ventas pendientes de sync */}
+      {pendingCount > 0 && (
+        <button
+          type="button"
+          className="btn btn-sm btn-warning text-nowrap d-flex align-items-center gap-1"
+          onClick={onSincronizar}
+          disabled={syncing || !isOnline}
+          title="Ventas guardadas offline pendientes de sincronizar"
+        >
+          {syncing
+            ? <span className="spinner-border spinner-border-sm" />
+            : <i className="bi bi-arrow-repeat" />}
+          <span>{pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}</span>
+        </button>
+      )}
+
+      {/* Buscador */}
       <div className="input-group input-group-lg flex-grow-1 shadow-sm">
         <span className="input-group-text bg-white text-secondary border-end-0">
           <i className="bi bi-search" />
@@ -45,18 +69,18 @@ const PosTopBar = forwardRef(function PosTopBar(
         )}
       </div>
 
-      {/* ------------------ BOTON AÑADIR PRODUCTO ---------------------- */}
+      {/* Añadir Producto */}
       <button
         type="button"
         className="btn btn-warning btn-lg d-flex align-items-center gap-2 text-nowrap fw-semibold"
         onClick={onOpenAddProduct}
-        title="Buscar y agregar un producto al carrito"
+        title="Buscar y agregar un producto al carrito (Atajo: F3)"
       >
         <i className="bi bi-plus-circle-fill" />
-        Añadir Producto
+        Añadir Producto <small className="opacity-75">(F3)</small>
       </button>
 
-      {/* ----------------- BOTON VENTAS APARTADAS ---------------------- */}
+      {/* Ventas Apartadas */}
       <button
         type="button"
         className="btn btn-outline-secondary btn-lg"
@@ -66,7 +90,23 @@ const PosTopBar = forwardRef(function PosTopBar(
         <i className="bi bi-clock-history" />
       </button>
 
-      {/* ----------------------- FECHA / CAJA -------------------------- */}
+      {/* Campana bajo stock */}
+      <button
+        type="button"
+        className={`btn btn-lg position-relative ${bajoStockCount > 0 ? 'btn-outline-danger' : 'btn-outline-secondary'}`}
+        title="Alertas de stock bajo"
+        onClick={onOpenBajoStock}
+      >
+        <i className={`bi ${bajoStockCount > 0 ? 'bi-bell-fill' : 'bi-bell'}`} />
+        {bajoStockCount > 0 && (
+          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+            {bajoStockCount > 99 ? '99+' : bajoStockCount}
+            <span className="visually-hidden">productos con bajo stock</span>
+          </span>
+        )}
+      </button>
+
+      {/* Fecha / Caja */}
       <div className="text-end lh-sm flex-shrink-0">
         <div className="text-secondary text-nowrap">{formatLongDate()}</div>
         <strong className="text-nowrap">Caja #1</strong>

@@ -5,15 +5,13 @@
  *
  *   - Marca / logo arriba.
  *   - Lista de secciones (desde navItems.js) con <NavLink>.
- *   - Zona de usuario abajo: muestra nombre y rol real de `usuarios_perfiles`
- *     (via AuthContext) + boton de Cerrar Sesion.
+ *   - Zona de usuario abajo: nombre y rol + boton Cerrar Sesion.
  * ---------------------------------------------------------------------------
  */
 import { NavLink } from 'react-router-dom';
 import { navItems } from './navItems';
 import { useAuth } from '../context/useAuth';
 
-// Etiqueta en espanol para cada rol de la tabla `usuarios_perfiles`.
 const LABEL_ROL = {
   admin: 'Administrador',
   cajero: 'Cajero',
@@ -29,10 +27,8 @@ export default function Sidebar() {
       <div className="fp-sidebar-brand d-flex align-items-center gap-2 px-3">
         <i className="bi bi-wrench-adjustable-circle fs-3 text-warning" />
         <div className="lh-1">
-          <div className="fw-bold fs-5">Ferromat</div>
-          <small className="fp-sidebar-tagline">
-            Sistema de Ventas
-          </small>
+          <div className="fw-bold fs-5">Bunker Ferreteria</div>
+          <small className="fp-sidebar-tagline">Sistema de Ventas</small>
         </div>
       </div>
 
@@ -45,9 +41,7 @@ export default function Sidebar() {
                 to={item.path}
                 end={item.path === '/'}
                 className={({ isActive }) =>
-                  `fp-nav-link d-flex align-items-center gap-3 ${
-                    isActive ? 'active' : ''
-                  }`
+                  `fp-nav-link d-flex align-items-center gap-3 ${isActive ? 'active' : ''}`
                 }
               >
                 <i className={`bi ${item.icono} fs-5`} />
@@ -60,16 +54,12 @@ export default function Sidebar() {
 
       {/* ---------------------- USUARIO + LOGOUT ------------------------ */}
       <div className="fp-sidebar-user-wrap px-2 pb-2">
-        {/* Info del usuario autenticado */}
         <div className="fp-sidebar-user d-flex align-items-center gap-2 px-2 py-2 rounded">
           <div className="fp-avatar d-flex align-items-center justify-content-center flex-shrink-0">
             <i className="bi bi-person-fill" />
           </div>
           <div className="lh-1 min-w-0 flex-grow-1">
-            <div
-              className="fw-semibold text-white text-truncate"
-              title={usuario.nombre}
-            >
+            <div className="fw-semibold text-white text-truncate" title={usuario.nombre}>
               {usuario.nombre}
             </div>
             <small className="fp-sidebar-tagline">
@@ -78,7 +68,6 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Boton de cerrar sesion */}
         <button
           type="button"
           className="fp-btn-logout w-100 d-flex align-items-center gap-2"

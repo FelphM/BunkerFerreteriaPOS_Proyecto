@@ -57,7 +57,7 @@ export default function LoginPage() {
           <div className="fp-login-logo mx-auto mb-3">
             <i className="bi bi-wrench-adjustable-circle" />
           </div>
-          <h1 className="h3 fw-bold mb-0">Ferromat S.A.</h1>
+          <h1 className="h3 fw-bold mb-0">Bunker Ferreteria</h1>
           <p className="text-secondary mt-1 mb-0">Sistema de Punto de Venta</p>
         </div>
 

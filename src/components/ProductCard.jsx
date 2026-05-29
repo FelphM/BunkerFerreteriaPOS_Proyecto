@@ -1,62 +1,55 @@
 /**
  * ProductCard.jsx
  * ---------------------------------------------------------------------------
- * Tarjeta de un item vendible (SKU) dentro de la grilla del POS.
- *
- * Muestra: icono de categoria, nombre (+ variante si aplica), codigo interno,
- * precio unitario, unidad de venta y un badge de stock con semaforo de color.
- *
- * Al hacer clic agrega el item al carrito (salvo que este agotado).
- * Componente de presentacion puro.
- *
- * @param {object}   item        Item aplanado de getSellableItems().
- * @param {string}   iconoCategoria  Clase de Bootstrap Icon de su categoria.
- * @param {Function} onAdd       Callback (item) => void.
+ * Tarjeta de un item vendible dentro de la grilla del POS.
+ * Click en la tarjeta → agrega al carrito.
+ * Click en el icono de edicion → abre EditProductModal.
  * ---------------------------------------------------------------------------
  */
 import { formatCLP, getStockStatus } from '../utils/format';
 
-export default function ProductCard({ item, iconoCategoria, onAdd }) {
+export default function ProductCard({ item, iconoCategoria, onAdd, onEdit }) {
   const stock = getStockStatus(item.stock_actual);
-
-  // Si el producto padre tiene varias medidas, mostramos la variante.
   const titulo = item.tieneVariantes
     ? `${item.nombre} ${item.variante_nombre}`
     : item.nombre;
 
   return (
-    <button
-      type="button"
-      className="fp-product-card card border-0 shadow-sm h-100 text-start"
-      onClick={() => onAdd(item)}
-      disabled={stock.agotado}
+    <div
+      className={`fp-product-card card border-0 shadow-sm h-100 position-relative ${stock.agotado ? 'opacity-60' : ''}`}
+      style={{ cursor: stock.agotado ? 'not-allowed' : 'pointer' }}
+      onClick={() => !stock.agotado && onAdd(item)}
       title={stock.agotado ? 'Producto agotado' : `Agregar ${titulo}`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' && !stock.agotado) onAdd(item); }}
     >
+      {/* Boton editar — esquina superior derecha */}
+      <button
+        type="button"
+        className="btn btn-sm btn-light position-absolute top-0 end-0 m-1 p-1 lh-1 opacity-0 fp-edit-btn"
+        style={{ zIndex: 2, lineHeight: 1 }}
+        title="Editar producto"
+        onClick={(e) => { e.stopPropagation(); onEdit?.(item); }}
+        tabIndex={-1}
+      >
+        <i className="bi bi-pencil" style={{ fontSize: '0.7rem' }} />
+      </button>
+
       <div className="card-body d-flex flex-column p-2">
-        {/* Icono de categoria */}
         <div className="fp-product-icon text-center mb-1">
           <i className={`bi ${iconoCategoria}`} />
         </div>
-
-        {/* Nombre + codigo interno */}
         <div className="fp-product-name fw-semibold lh-sm">{titulo}</div>
         <small className="text-secondary">{item.codigo}</small>
-
-        {/* Precio + unidad */}
         <div className="mt-auto">
-          <div className="fp-product-price fw-bold">
-            {formatCLP(item.precio_venta)}
-          </div>
+          <div className="fp-product-price fw-bold">{formatCLP(item.precio_venta)}</div>
           <small className="text-secondary">/ {item.unidad_venta}</small>
         </div>
-
-        {/* Badge de stock (semaforo) */}
-        <span
-          className={`badge bg-${stock.variante} fp-stock-badge mt-2 align-self-start`}
-        >
+        <span className={`badge bg-${stock.variante} fp-stock-badge mt-2 align-self-start`}>
           {stock.texto}
         </span>
       </div>
-    </button>
+    </div>
   );
 }

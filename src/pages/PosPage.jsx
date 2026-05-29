@@ -12,7 +12,7 @@
  * ---------------------------------------------------------------------------
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getSellableItems, getCategorias } from '../data/queries';
+import { getSellableItems, getCategorias, getVariantesInventario } from '../data/queries';
 import { usePosCart } from '../hooks/usePosCart';
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 import { formatCLP } from '../utils/format';
@@ -22,6 +22,11 @@ import ProductGrid from '../components/ProductGrid';
 import CheckoutPanel from '../components/CheckoutPanel';
 import AddProductModal from '../components/AddProductModal';
 import HeldSalesModal from '../components/HeldSalesModal';
+import { guardarCotizacion } from '../components/CotizacionesModal';
+import BajoStockModal from '../components/BajoStockModal';
+import CotizarPreviewModal from '../components/CotizarPreviewModal';
+import EditProductModal from '../components/EditProductModal';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 export default function PosPage() {
   const {
@@ -42,6 +47,17 @@ export default function PosPage() {
       .finally(() => setCargando(false));
   }, []);
 
+  // Carga productos con bajo stock al montar (se refresca al abrir el modal).
+  useEffect(() => {
+    getVariantesInventario()
+      .then((variantes) => {
+        setProductosBajoStock(
+          variantes.filter((v) => v.activo && v.stock_actual <= v.stock_minimo),
+        );
+      })
+      .catch(console.error);
+  }, []);
+
   // Estado de UI.
   const [query, setQuery] = useState('');
   const [metodoPago, setMetodoPago] = useState('Efectivo');
@@ -50,10 +66,27 @@ export default function PosPage() {
   const [notas, setNotas] = useState('');
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showHeldModal, setShowHeldModal] = useState(false);
+  const [showBajoStock, setShowBajoStock] = useState(false);
+  const [productosBajoStock, setProductosBajoStock] = useState([]);
+  const [cotizacionPreview, setCotizacionPreview] = useState(null);
+  const [editando, setEditando] = useState(null); // item del POS a editar
+  const { isOnline, pendingCount, syncing, sincronizar, refreshPendingCount } = useOnlineStatus();
   const [errorVenta, setErrorVenta] = useState(null);
 
   const searchInputRef = useRef(null);
   const hayItems = cart.length > 0;
+
+  // ---- ATAJOS DE TECLADO ----------------------------------------------
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'F3') {
+        e.preventDefault();
+        setShowAddProduct(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // ---- PISTOLA DE CODIGO DE BARRAS ------------------------------------
   // Detecta lecturas rapidas y agrega directo al carrito.
@@ -103,10 +136,15 @@ export default function PosPage() {
     });
 
     if (result.success) {
-      window.alert(
-        `Venta #${result.venta?.numero_venta ?? ''} registrada\n` +
-        `Total: ${formatCLP(totals.total)}\nPago: ${metodoPago}`,
-      );
+      if (result.offline) {
+        window.alert(`Venta guardada localmente (sin conexion).\nSe sincronizara automaticamente al recuperar la red.`);
+      } else {
+        window.alert(
+          `Venta #${result.venta?.numero_venta ?? ''} registrada\n` +
+          `Total: ${formatCLP(totals.total)}\nPago: ${metodoPago}`,
+        );
+      }
+      refreshPendingCount();
       resetCheckoutForm();
     } else {
       setErrorVenta(result.error ?? 'Error al procesar la venta.');
@@ -124,15 +162,51 @@ export default function PosPage() {
     if (ok) resetCheckoutForm();
   };
 
-  /** COTIZAR: sin afectar stock. */
+  /** COTIZAR: abre preview para confirmar antes de guardar. */
   const handleCotizar = () => {
     if (!hayItems) return;
-    window.alert(`Cotizacion por ${formatCLP(totals.total)}.\nNo descuenta stock.`);
+    const items = cart.map((item) => ({
+      nombre: item.nombre,
+      sku: item.sku ?? null,
+      cantidad: item.cantidad,
+      precio_unitario: item.precio_venta,
+    }));
+    setCotizacionPreview({
+      fecha: new Date().toISOString(),
+      cliente,
+      notas,
+      items,
+      subtotal: totals.neto,
+      iva: totals.iva,
+      total: totals.total,
+    });
+  };
+
+  const handleConfirmarCotizacion = () => {
+    if (cotizacionPreview) guardarCotizacion(cotizacionPreview);
+    setCotizacionPreview(null);
   };
 
   const handleRecoverSale = async (esperaId) => {
     await recoverSale(esperaId);
     setShowHeldModal(false);
+  };
+
+  const handleProductoCreado = async ({ producto, variante }) => {
+    try {
+      // 1. Recargar el catálogo
+      const [items, cats] = await Promise.all([getSellableItems(), getCategorias()]);
+      setSellableItems(items);
+      setCategorias(cats);
+      
+      // 2. Añadir el nuevo producto al carrito automáticamente
+      const newItem = items.find((i) => i.id === variante.id);
+      if (newItem) {
+        addToCart(newItem);
+      }
+    } catch (err) {
+      console.error("Error recargando catálogo tras crear producto:", err);
+    }
   };
 
   // ---- RENDER ---------------------------------------------------------
@@ -145,6 +219,12 @@ export default function PosPage() {
         onQueryChange={setQuery}
         onOpenAddProduct={() => setShowAddProduct(true)}
         onOpenHeld={() => setShowHeldModal(true)}
+        onOpenBajoStock={() => setShowBajoStock(true)}
+        bajoStockCount={productosBajoStock.length}
+        isOnline={isOnline}
+        pendingCount={pendingCount}
+        syncing={syncing}
+        onSincronizar={sincronizar}
       />
 
       {/* =================== CUERPO (3 PANELES) ======================== */}
@@ -162,6 +242,7 @@ export default function PosPage() {
           categorias={categorias}
           query={query}
           onAddItem={handleAddItem}
+          onEditItem={setEditando}
           cargando={cargando}
         />
 
@@ -188,8 +269,7 @@ export default function PosPage() {
       <AddProductModal
         show={showAddProduct}
         onClose={() => setShowAddProduct(false)}
-        items={sellableItems}
-        onAddItem={handleAddItem}
+        onProductoCreado={handleProductoCreado}
       />
 
       {/* ===================== MODAL: VENTAS APARTADAS ================= */}
@@ -198,6 +278,33 @@ export default function PosPage() {
         onClose={() => setShowHeldModal(false)}
         heldSales={heldSales}
         onRecover={handleRecoverSale}
+      />
+
+      {/* =================== MODAL: EDITAR PRODUCTO ==================== */}
+      <EditProductModal
+        item={editando}
+        onClose={() => setEditando(null)}
+        onGuardado={async () => {
+          const [items, cats] = await Promise.all([getSellableItems(), getCategorias()]);
+          setSellableItems(items);
+          setCategorias(cats);
+          setEditando(null);
+        }}
+      />
+
+      {/* ================= MODAL: PREVIEW COTIZACION =================== */}
+      <CotizarPreviewModal
+        show={!!cotizacionPreview}
+        cotizacion={cotizacionPreview}
+        onGuardar={handleConfirmarCotizacion}
+        onCancelar={() => setCotizacionPreview(null)}
+      />
+
+      {/* ===================== MODAL: BAJO STOCK ======================= */}
+      <BajoStockModal
+        show={showBajoStock}
+        onClose={() => setShowBajoStock(false)}
+        productos={productosBajoStock}
       />
     </div>
   );

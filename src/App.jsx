@@ -29,6 +29,8 @@ import ClientesPage from './pages/ClientesPage';
 import ProveedoresPage from './pages/ProveedoresPage';
 import ReportesPage from './pages/ReportesPage';
 import ConfiguracionPage from './pages/ConfiguracionPage';
+import CategoriasPage from './pages/CategoriasPage';
+import CotizacionesPage from './pages/CotizacionesPage';
 import PagePlaceholder from './components/PagePlaceholder';
 import './styles/app.css';
 
@@ -49,6 +51,8 @@ export default function App() {
           <Route path="compras" element={<ComprasPage />} />
           <Route path="clientes" element={<ClientesPage />} />
           <Route path="proveedores" element={<ProveedoresPage />} />
+          <Route path="categorias" element={<CategoriasPage />} />
+          <Route path="cotizaciones" element={<CotizacionesPage />} />
           <Route path="reportes" element={<ReportesPage />} />
           <Route path="configuracion" element={<ConfiguracionPage />} />
 

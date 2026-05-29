@@ -1,6 +1,6 @@
 /* ===========================================================================
  * app.css
- * Tema visual del sistema POS de Ferromat S.A.
+ * Tema visual del sistema POS de Bunker Ferreteria.
  *
  * Complementa a Bootstrap 5 (no lo reemplaza). Define:
  *   - Paleta de marca (variables CSS).
@@ -9,7 +9,7 @@
  *   - Encabezados de pagina (vistas placeholder).
  *
  * Convencion de prefijo: todas las clases propias empiezan con `fp-`
- * (Ferromat POS) para no colisionar con utilidades de Bootstrap.
+ * (Ferreteria POS) para no colisionar con utilidades de Bootstrap.
  * ======================================================================== */
 
 :root {
@@ -86,6 +86,12 @@ body {
   color: #fff;
   font-weight: 600;
   box-shadow: 0 4px 10px rgba(232, 98, 14, 0.35);
+}
+
+/* Divisor dentro del nav del sidebar */
+.fp-sidebar-divider {
+  border-color: rgba(255, 255, 255, 0.1);
+  opacity: 1;
 }
 
 /* Zona inferior del sidebar: usuario + logout */
@@ -368,14 +374,17 @@ body {
     border-color 0.1s ease;
   border: 1px solid var(--fp-border) !important;
 }
-.fp-product-card:hover:not(:disabled) {
+.fp-product-card:hover {
   transform: translateY(-3px);
   border-color: var(--fp-accent) !important;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1) !important;
 }
-.fp-product-card:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+.fp-product-card .fp-edit-btn {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.fp-product-card:hover .fp-edit-btn {
+  opacity: 1 !important;
 }
 .fp-product-icon {
   font-size: 1.85rem;

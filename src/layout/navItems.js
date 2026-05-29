@@ -18,6 +18,8 @@ export const navItems = [
   { path: '/compras', label: 'Compras', icono: 'bi-bag' },
   { path: '/clientes', label: 'Clientes', icono: 'bi-people' },
   { path: '/proveedores', label: 'Proveedores', icono: 'bi-truck' },
+  { path: '/categorias', label: 'Categorias', icono: 'bi-tags' },
+  { path: '/cotizaciones', label: 'Cotizaciones', icono: 'bi-file-earmark-text' },
   { path: '/reportes', label: 'Reportes', icono: 'bi-file-earmark-bar-graph' },
   { path: '/configuracion', label: 'Configuracion', icono: 'bi-gear' },
 ];

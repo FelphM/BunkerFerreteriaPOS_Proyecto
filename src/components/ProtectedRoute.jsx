@@ -46,7 +46,7 @@ export default function ProtectedRoute() {
             role="status"
             aria-hidden="true"
           />
-          Cargando Ferromat...
+          Cargando Bunker Ferreteria...
         </div>
       </div>
     );

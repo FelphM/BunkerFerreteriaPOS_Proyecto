@@ -398,8 +398,20 @@ export async function getMovimientosPorVariante(varianteId) {
 // ===========================================================================
 
 /**
+ * Clientes registrados directamente en la tabla `clientes`.
+ */
+export async function getClientes() {
+  const res = await supabase
+    .from('clientes')
+    .select('*')
+    .order('nombre');
+  throwIfError(res);
+  return res.data ?? [];
+}
+
+/**
  * Clientes derivados de la tabla `ventas`, agrupados por RUT.
- * Si a futuro existe tabla `clientes`, reemplazar por SELECT directo.
+ * Se usa para enriquecer la vista de clientes con historial de compras.
  */
 export async function getClientesDerivados() {
   const res = await supabase

@@ -14,6 +14,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { getVentasEnEspera, getConfigNumero } from '../data/queries';
 import { safeQty } from '../utils/format';
+import db from '../lib/offlineDB';
 
 export function usePosCart() {
   // -------------------------------------------------------------------------
@@ -153,6 +154,23 @@ export function usePosCart() {
     async ({ nombreCliente, rutCliente, correoCliente, metodoPago, observaciones }) => {
       if (cart.length === 0) return { success: false, error: 'Carrito vacio' };
 
+      // Si no hay conexion, guardar en Dexie para sync posterior.
+      if (!navigator.onLine) {
+        const lineas = cart.map((item) => ({
+          variante_id: item.id,
+          cantidad: safeQty(item.cantidad),
+          precio_unitario: item.precio_venta,
+        }));
+        await db.ventas_pendientes.add({
+          creado_en: new Date().toISOString(),
+          intentos: 0,
+          error: null,
+          datos: { nombreCliente, rutCliente, correoCliente, metodoPago, observaciones, lineas },
+        });
+        clearCart();
+        return { success: true, offline: true };
+      }
+
       // 1. Crear cabecera de la venta.
       const { data: venta, error: errVenta } = await supabase
         .from('ventas')
@@ -162,14 +180,11 @@ export function usePosCart() {
           correo_cliente: correoCliente || null,
           metodo_pago: metodoPago,
           observaciones: observaciones || null,
-          // `total` lo calcula el trigger tg_recalcular_total_venta.
         })
         .select()
         .single();
 
-      if (errVenta) {
-        return { success: false, error: errVenta.message };
-      }
+      if (errVenta) return { success: false, error: errVenta.message };
 
       // 2. Insertar lineas de detalle.
       const lineas = cart.map((item) => ({
@@ -177,17 +192,11 @@ export function usePosCart() {
         variante_id: item.id,
         cantidad: safeQty(item.cantidad),
         precio_unitario: item.precio_venta,
-        // `subtotal` lo calcula la columna GENERATED del esquema.
-        // El trigger `tg_descontar_stock_venta` descuenta stock automaticamente.
       }));
 
-      const { error: errDetalle } = await supabase
-        .from('detalle_ventas')
-        .insert(lineas);
+      const { error: errDetalle } = await supabase.from('detalle_ventas').insert(lineas);
 
       if (errDetalle) {
-        // Si falla el detalle (ej: stock insuficiente detectado por el trigger),
-        // intentamos borrar la cabecera huerfana.
         await supabase.from('ventas').delete().eq('id', venta.id);
         return { success: false, error: errDetalle.message };
       }

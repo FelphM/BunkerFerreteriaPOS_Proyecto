@@ -2,7 +2,7 @@
  * ProveedoresPage.jsx
  * ---------------------------------------------------------------------------
  * Proveedores: listado con datos de contacto y la cantidad de productos
- * asociados a cada uno. Incluye busqueda.
+ * asociados a cada uno. Incluye busqueda y modal para agregar nuevos.
  * ---------------------------------------------------------------------------
  */
 import { useMemo, useState } from 'react';
@@ -10,10 +10,12 @@ import { getProveedores } from '../data/queries';
 import { useQuery } from '../hooks/useQuery';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
+import AddProveedorModal from '../components/AddProveedorModal';
 
 export default function ProveedoresPage() {
-  const { data: proveedores = [] } = useQuery(getProveedores);
+  const { data: proveedores = [], refetch } = useQuery(getProveedores);
   const [busqueda, setBusqueda] = useState('');
+  const [showAdd, setShowAdd] = useState(false);
 
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -38,8 +40,11 @@ export default function ProveedoresPage() {
         icono="bi-truck"
         descripcion={`${proveedores.length} proveedores registrados`}
       >
-        {/* TODO: Supabase Insert en tabla `proveedores` (formulario de alta). */}
-        <button type="button" className="btn btn-sm fp-btn-accent" disabled>
+        <button
+          type="button"
+          className="btn btn-sm fp-btn-accent"
+          onClick={() => setShowAdd(true)}
+        >
           <i className="bi bi-plus-lg me-1" />
           Nuevo proveedor
         </button>
@@ -135,6 +140,12 @@ export default function ProveedoresPage() {
           </div>
         </div>
       </div>
+
+      <AddProveedorModal
+        show={showAdd}
+        onClose={() => setShowAdd(false)}
+        onProveedorCreado={() => { setShowAdd(false); refetch?.(); }}
+      />
     </>
   );
 }

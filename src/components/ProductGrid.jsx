@@ -11,7 +11,7 @@
 import { useMemo, useState } from 'react';
 import ProductCard from './ProductCard';
 
-export default function ProductGrid({ items, categorias = [], query, onAddItem, cargando }) {
+export default function ProductGrid({ items, categorias = [], query, onAddItem, onEditItem, cargando }) {
   const [categoriaActiva, setCategoriaActiva] = useState(null);
 
   const ICONO_POR_CATEGORIA = useMemo(
@@ -85,6 +85,7 @@ export default function ProductGrid({ items, categorias = [], query, onAddItem, 
                 item={item}
                 iconoCategoria={ICONO_POR_CATEGORIA[item.id_categoria] ?? 'bi-box-seam'}
                 onAdd={onAddItem}
+                onEdit={onEditItem}
               />
             ))}
           </div>
