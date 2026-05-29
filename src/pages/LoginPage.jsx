@@ -88,10 +88,10 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Contrasena */}
+          {/* Contraseña */}
           <div className="mb-3">
             <label htmlFor="password" className="form-label fw-semibold">
-              Contrasena
+              Contraseña
             </label>
             <div className="input-group">
               <span className="input-group-text bg-white">
@@ -115,7 +115,7 @@ export default function LoginPage() {
                 className="input-group-text bg-white"
                 onClick={() => setVerPassword((v) => !v)}
                 tabIndex={-1}
-                aria-label={verPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+                aria-label={verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               >
                 <i className={`bi ${verPassword ? 'bi-eye-slash' : 'bi-eye'}`} />
               </button>
@@ -156,7 +156,7 @@ export default function LoginPage() {
 
         {/* -------------------- PIE DE PAGINA --------------------------- */}
         <p className="text-center text-secondary mt-4 mb-0 small">
-          Si olvidaste tu contrasena, contacta al administrador del sistema.
+          Si olvidaste tu contraseña, contacta al administrador del sistema.
         </p>
       </div>
     </div>
