@@ -1,11 +1,13 @@
 /**
  * AppLayout.jsx
  * ---------------------------------------------------------------------------
- * Cascaron (shell) de la aplicacion: combina el <Sidebar /> fijo con el area
- * de contenido. El <Outlet /> de react-router-dom renderiza la vista activa.
+ * Cascaron (shell) de la aplicacion: combina el <Sidebar /> plegable con el
+ * area de contenido. El <Outlet /> de react-router-dom renderiza la vista
+ * activa.
  *
- * Todas las vistas (POS, Dashboard, Inventario, ...) viven dentro de este
- * layout, lo que garantiza cohesion visual en todo el sistema.
+ * Estados de sidebar:
+ *   - Desktop (≥768px): visible, puede colapsarse a modo icono.
+ *   - Mobil  (<768px):  oculto por defecto, se abre como panel superpuesto.
  * ---------------------------------------------------------------------------
  */
 import { useState, useEffect } from 'react';
@@ -14,14 +16,13 @@ import Sidebar from './Sidebar';
 import { supabase } from '../lib/supabaseClient';
 
 export default function AppLayout() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [itemsCriticos, setItemsCriticos] = useState(0);
   const [alertaCerrada, setAlertaCerrada] = useState(false);
 
   useEffect(() => {
-    // Cuenta variantes activas con stock en o bajo el minimo.
     const verificarStockBajo = async () => {
-      // Supabase no soporta filtros entre columnas directamente en el cliente,
-      // por lo que traemos las columnas necesarias y filtramos en JS.
       const { data: variantes } = await supabase
         .from('producto_variantes')
         .select('id, stock_actual, stock_minimo')
@@ -39,8 +40,6 @@ export default function AppLayout() {
 
     verificarStockBajo();
 
-    // Canal de Realtime: re-verifica el stock cuando la tabla cambia.
-    // Esto cubre tanto ventas (descuento de stock) como ingresos de compras.
     const channel = supabase
       .channel('stock-alertas')
       .on(
@@ -57,9 +56,37 @@ export default function AppLayout() {
 
   return (
     <div className="fp-app d-flex vh-100 overflow-hidden">
-      <Sidebar />
+      {/* Overlay para cerrar sidebar en movil */}
+      {mobileSidebarOpen && (
+        <div
+          className="fp-sidebar-overlay"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        mobileOpen={mobileSidebarOpen}
+        onDesktopToggle={() => setSidebarCollapsed((v) => !v)}
+        onMobileClose={() => setMobileSidebarOpen(false)}
+      />
+
       <main className="fp-content flex-grow-1 d-flex flex-column overflow-hidden">
+        {/* Barra superior solo visible en movil */}
+        <div className="fp-mobile-topbar">
+          <button
+            type="button"
+            className="btn btn-link p-0 text-white text-decoration-none"
+            onClick={() => setMobileSidebarOpen(true)}
+          >
+            <i className="bi bi-list fs-3" />
+          </button>
+          <i className="bi bi-wrench-adjustable-circle fs-4 text-warning ms-2 me-1" />
+          <span className="fw-bold text-white">Bunker Ferreteria</span>
+        </div>
+
         <Outlet />
+
         {itemsCriticos > 0 && !alertaCerrada && (
           <div
             className="alert alert-warning alert-dismissible fade show shadow-lg border-start border-4 border-warning m-3 position-absolute"
@@ -72,9 +99,9 @@ export default function AppLayout() {
             }}
           >
             <div className="d-flex align-items-center">
-              <i className="bi bi-exclamation-triangle-fill me-2 fs-4 text-warning"></i>
+              <i className="bi bi-exclamation-triangle-fill me-2 fs-4 text-warning" />
               <div>
-                <strong>Alerta de Inventario:</strong><br/>
+                <strong>Alerta de Inventario:</strong><br />
                 Hay {itemsCriticos} {itemsCriticos === 1 ? 'producto' : 'productos'} con stock bajo el mínimo.
               </div>
             </div>
@@ -83,7 +110,7 @@ export default function AppLayout() {
               className="btn-close"
               onClick={() => setAlertaCerrada(true)}
               aria-label="Cerrar"
-            ></button>
+            />
           </div>
         )}
       </main>

@@ -57,6 +57,62 @@ body {
   width: 232px;
   background: var(--fp-sidebar-bg);
   color: var(--fp-sidebar-text);
+  transition: width 0.22s ease;
+  overflow: hidden; /* evita que el texto se muestre durante la transicion */
+}
+
+/* Modo colapsado (solo iconos) */
+.fp-sidebar.fp-collapsed {
+  width: 60px;
+}
+.fp-sidebar.fp-collapsed .fp-sidebar-brand {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  justify-content: center;
+}
+.fp-nav-link-collapsed {
+  justify-content: center;
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+}
+
+/* Boton de colapso del sidebar */
+.fp-sidebar-toggle {
+  background: transparent;
+  border: none;
+  color: var(--fp-sidebar-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 0.4rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+}
+.fp-sidebar-toggle:hover {
+  background: var(--fp-sidebar-hover);
+  color: #fff;
+}
+
+/* Barra superior para movil (oculta en desktop) */
+.fp-mobile-topbar {
+  display: none;
+  background: var(--fp-sidebar-bg);
+  padding: 0.55rem 1rem;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Overlay oscuro detras del sidebar en movil */
+.fp-sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.52);
+  z-index: 1040;
+  cursor: pointer;
 }
 
 .fp-sidebar-brand {
@@ -531,4 +587,400 @@ body {
 .fp-btn-accent:hover {
   background: #cf550b;
   color: #fff;
+}
+
+/* ===========================================================================
+ * BOTONES: ligeramente más grandes en back-office (fuera del POS)
+ * ======================================================================== */
+
+/* btn-sm en back-office: un paso más grande que el default */
+.fp-page-body .btn-sm,
+.fp-page-header .btn-sm {
+  --bs-btn-padding-y: 0.35rem;
+  --bs-btn-padding-x: 0.65rem;
+  --bs-btn-font-size: 0.875rem;
+}
+
+/* Botones regulares en back-office */
+.fp-page-body .btn:not(.btn-sm):not(.btn-close),
+.fp-page-header .btn:not(.btn-sm):not(.btn-close) {
+  --bs-btn-padding-y: 0.45rem;
+  --bs-btn-padding-x: 0.95rem;
+}
+
+/* Botones dentro de modales (aplica a toda la app, no solo POS) */
+.modal-footer .btn {
+  --bs-btn-padding-y: 0.45rem;
+  --bs-btn-padding-x: 0.95rem;
+}
+.modal-body .btn-sm {
+  --bs-btn-padding-y: 0.35rem;
+  --bs-btn-padding-x: 0.65rem;
+}
+
+/* ===========================================================================
+ * BUSCADOR DE CLIENTES (CheckoutPanel)
+ * ======================================================================== */
+.fp-cliente-wrap {
+  position: relative;
+}
+.fp-cliente-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.13);
+  z-index: 300;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.fp-cliente-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s;
+  font-size: 0.87rem;
+}
+.fp-cliente-option:hover,
+.fp-cliente-option:focus {
+  background: var(--fp-accent-soft);
+  outline: none;
+}
+.fp-cliente-option-nuevo {
+  flex-direction: row;
+  align-items: center;
+  color: var(--fp-accent);
+  font-weight: 600;
+  border-top: 1px solid var(--fp-border);
+}
+.fp-cliente-option-nuevo:hover,
+.fp-cliente-option-nuevo:focus {
+  background: var(--fp-accent-soft);
+}
+.fp-cliente-empty {
+  padding: 0.55rem 0.75rem;
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+
+/* ===========================================================================
+ * RESPONSIVE — TABLET (< 1080px): comprimir paneles POS
+ * ======================================================================== */
+@media (max-width: 1079.98px) {
+  .fp-cart-panel {
+    flex: 1 1 240px;
+    min-width: 220px;
+    max-width: 300px;
+  }
+  .fp-checkout {
+    flex: 0 0 300px;
+  }
+}
+
+/* ===========================================================================
+ * RESPONSIVE — MOVIL (< 768px)
+ * ======================================================================== */
+@media (max-width: 767.98px) {
+  /* Mostrar barra superior movil */
+  .fp-mobile-topbar {
+    display: flex !important;
+  }
+
+  /* Sidebar como panel superpuesto */
+  .fp-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 1050;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease !important;
+    width: 232px !important; /* siempre full en movil, nunca colapsado */
+  }
+  .fp-sidebar.fp-mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Ajustar padding del area de contenido */
+  .fp-content {
+    padding: 0.5rem !important;
+    gap: 0.5rem !important;
+    overflow-y: auto !important;
+  }
+
+  /* POS: altura automatica para que el contenido pueda scrollear */
+  .fp-pos {
+    height: auto !important;
+    min-height: 0;
+  }
+
+  /* Paneles del POS en columna */
+  .fp-pos-body {
+    flex-direction: column;
+    overflow: visible;
+    height: auto;
+    flex: none !important;
+  }
+
+  .fp-cart-panel {
+    flex: none !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .fp-product-grid {
+    flex: 0 0 380px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .fp-checkout {
+    flex: none !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* El cuerpo del checkout no necesita scroll interno en movil */
+  .fp-checkout-body {
+    overflow: visible !important;
+    flex: none !important;
+  }
+
+  /* La barra del POS puede hacer salto de linea en movil */
+  .fp-pos-topbar {
+    flex-wrap: wrap;
+  }
+
+  /* Tablas con scroll horizontal en paginas de back-office */
+  .fp-page-body {
+    overflow-x: hidden;
+  }
+}
+
+/* ===========================================================================
+ * MODO OSCURO — Bootstrap 5.3 data-bs-theme="dark"
+ * Bootstrap maneja: cards, tables, forms, modals, badges, buttons.
+ * Aquí sobreescribimos solo los elementos fp-* y utilidades bg-white.
+ * ======================================================================== */
+[data-bs-theme="dark"] {
+  --fp-bg:          #13151f;
+  --fp-border:      #2c3048;
+  --fp-accent-soft: rgba(232, 98, 14, 0.18);
+}
+
+/* Fondo principal del área de contenido */
+[data-bs-theme="dark"] .fp-content {
+  background: var(--fp-bg);
+}
+
+/* Utilidad bg-white en headers/footers de cards — Bootstrap no la toca */
+[data-bs-theme="dark"] .bg-white {
+  background-color: var(--bs-body-bg) !important;
+}
+
+/* table-light es blanco; en dark mode debe usar el fondo de la tabla */
+[data-bs-theme="dark"] .table-light,
+[data-bs-theme="dark"] .table-light > th,
+[data-bs-theme="dark"] .table-light > td {
+  background-color: var(--bs-tertiary-bg) !important;
+  color: var(--bs-body-color);
+}
+
+/* Tarjeta de producto */
+[data-bs-theme="dark"] .fp-product-card {
+  background: var(--bs-body-bg) !important;
+  border-color: var(--fp-border) !important;
+}
+[data-bs-theme="dark"] .fp-product-icon {
+  color: #4a5068;
+}
+
+/* Item del carrito */
+[data-bs-theme="dark"] .fp-cart-item {
+  background: var(--bs-body-bg);
+  border-color: var(--fp-border);
+}
+
+/* Métodos de pago */
+[data-bs-theme="dark"] .fp-pay-method {
+  background: var(--bs-body-bg);
+  border-color: var(--fp-border);
+  color: var(--bs-body-color);
+}
+[data-bs-theme="dark"] .fp-pay-method.active {
+  background: var(--fp-accent-soft);
+  color: var(--fp-accent);
+}
+
+/* Dropdown de clientes/productos */
+[data-bs-theme="dark"] .fp-cliente-dropdown {
+  background: var(--bs-body-bg);
+  border-color: var(--fp-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+[data-bs-theme="dark"] .fp-cliente-option:hover,
+[data-bs-theme="dark"] .fp-cliente-option:focus {
+  background: var(--fp-accent-soft);
+}
+[data-bs-theme="dark"] .fp-cliente-option-nuevo {
+  border-top-color: var(--fp-border);
+}
+[data-bs-theme="dark"] .fp-cliente-empty {
+  color: var(--bs-secondary-color);
+}
+
+/* Vuelto / falta */
+[data-bs-theme="dark"] .fp-vuelto.ok {
+  background: rgba(26, 122, 60, 0.2);
+  color: #5dd08a;
+}
+[data-bs-theme="dark"] .fp-vuelto.falta {
+  background: rgba(192, 57, 43, 0.2);
+  color: #f28b82;
+}
+
+/* Pestañas de categoría en POS */
+[data-bs-theme="dark"] .fp-cat-tab {
+  background: var(--bs-body-bg);
+  border-color: var(--fp-border);
+  color: var(--bs-body-color);
+}
+
+/* Icono de página */
+[data-bs-theme="dark"] .fp-page-icon {
+  background: var(--bs-body-bg);
+  border-color: var(--fp-border);
+}
+
+/* Login */
+[data-bs-theme="dark"] .fp-login-card {
+  background: #1e2130;
+}
+[data-bs-theme="dark"] .fp-login-header h1 {
+  color: var(--bs-body-color);
+}
+
+/* Filtro de búsqueda con fondo blanco */
+[data-bs-theme="dark"] .input-group-text.bg-white {
+  background-color: var(--bs-body-bg) !important;
+  border-color: var(--bs-border-color);
+  color: var(--bs-body-color);
+}
+
+/* Barra superior móvil */
+[data-bs-theme="dark"] .fp-mobile-topbar {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ===========================================================================
+ * MODO OSCURO — Mejoras de contraste de texto
+ * Los colores grises hardcodeados del modo claro se vuelven invisibles sobre
+ * fondos oscuros. Aquí se reemplazan por equivalentes más brillantes.
+ * ======================================================================== */
+
+/* Labels de campo en el panel de cobro (CheckoutPanel) */
+[data-bs-theme="dark"] .fp-field-label {
+  color: #b0bace;
+}
+
+/* Taglines del sidebar (rol del usuario, subtítulo de marca) */
+[data-bs-theme="dark"] .fp-sidebar-tagline {
+  color: #8ea8c8;
+}
+
+/* Texto secundario: ligeramente más brillante que el Bootstrap default */
+[data-bs-theme="dark"] .text-secondary {
+  color: rgba(186, 196, 214, 0.9) !important;
+}
+[data-bs-theme="dark"] .text-muted {
+  color: rgba(172, 184, 202, 0.8) !important;
+}
+
+/* small dentro de tables y cards */
+[data-bs-theme="dark"] table small,
+[data-bs-theme="dark"] .card small {
+  color: rgba(172, 184, 202, 0.85);
+}
+
+/* Labels de formulario en modales */
+[data-bs-theme="dark"] .form-label,
+[data-bs-theme="dark"] .form-check-label {
+  color: var(--bs-body-color);
+}
+
+/* Texto secundario dentro de stat cards */
+[data-bs-theme="dark"] .fp-stat-label {
+  color: rgba(186, 196, 214, 0.95) !important;
+}
+
+/* Subtítulo en PageHeader */
+[data-bs-theme="dark"] .text-body-secondary {
+  color: rgba(186, 196, 214, 0.85) !important;
+}
+
+/* Bordes de cards más definidos */
+[data-bs-theme="dark"] .card {
+  border-color: var(--fp-border) !important;
+}
+
+/* Separadores horizontales */
+[data-bs-theme="dark"] hr {
+  border-color: rgba(255, 255, 255, 0.12);
+  opacity: 1;
+}
+
+/* Placeholder de inputs más visible */
+[data-bs-theme="dark"] input::placeholder,
+[data-bs-theme="dark"] textarea::placeholder {
+  color: rgba(140, 155, 180, 0.65) !important;
+  opacity: 1;
+}
+
+/* Input group text (prefijos $, %, unidades) */
+[data-bs-theme="dark"] .input-group-text {
+  color: rgba(186, 196, 214, 0.9);
+  border-color: var(--bs-border-color);
+}
+
+/* Badge secondary más legible */
+[data-bs-theme="dark"] .badge.bg-secondary,
+[data-bs-theme="dark"] .badge.text-bg-secondary {
+  background-color: #3d4a60 !important;
+  color: #c8d4e8 !important;
+}
+
+/* Texto de la tagline fp-sidebar-muted (logout, toggle botón) */
+[data-bs-theme="dark"] .fp-btn-logout {
+  color: #8ea8c8;
+}
+[data-bs-theme="dark"] .fp-btn-logout:hover {
+  color: #fc8181;
+  background: rgba(220, 53, 69, 0.15);
+}
+
+/* Avatar sidebar */
+[data-bs-theme="dark"] .fp-avatar {
+  background: rgba(255, 255, 255, 0.08);
+  color: #b0bace;
+}
+
+/* Descripciones dentro de los radios del AjusteStockModal */
+[data-bs-theme="dark"] .form-check-input:not(:checked) ~ div small {
+  color: rgba(172, 184, 202, 0.82);
+}
+
+/* Texto secundario de página sin etiqueta explícita */
+[data-bs-theme="dark"] p.text-secondary,
+[data-bs-theme="dark"] span.text-secondary,
+[data-bs-theme="dark"] div.text-secondary {
+  color: rgba(186, 196, 214, 0.88) !important;
 }

@@ -19,6 +19,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { getCategorias, getProveedores, getConfigNumero } from '../data/queries';
 import { formatCLP } from '../utils/format';
+import AddProveedorModal from './AddProveedorModal';
 
 // Unidades de venta disponibles.
 const UNIDADES = ['unidad', 'pza', 'metro', 'kg', 'galon', 'saco', 'bolsa', 'set', 'litro', 'caja'];
@@ -49,6 +50,14 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
   const [errores, setErrores] = useState({});
   const [exito, setExito] = useState(false);
   const primerInputRef = useRef(null);
+
+  // Añadir categoría inline
+  const [showNuevaCat, setShowNuevaCat] = useState(false);
+  const [nuevaCatNombre, setNuevaCatNombre] = useState('');
+  const [creandoCat, setCreandoCat] = useState(false);
+
+  // Añadir proveedor (abre AddProveedorModal)
+  const [showNuevoProv, setShowNuevoProv] = useState(false);
 
   // Carga catalogos al montar el modal por primera vez.
   useEffect(() => {
@@ -104,6 +113,28 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
       errs.margen_ganancia = 'El margen debe ser 0 o mayor.';
     return errs;
   };
+
+  async function handleCrearCategoria() {
+    if (!nuevaCatNombre.trim()) return;
+    setCreandoCat(true);
+    try {
+      const { data, error } = await supabase
+        .from('categorias')
+        .insert({ nombre: nuevaCatNombre.trim() })
+        .select()
+        .single();
+      if (error) throw error;
+      const cats = await getCategorias();
+      setCategorias(cats);
+      setForm((f) => ({ ...f, categoria_id: data.id }));
+      setNuevaCatNombre('');
+      setShowNuevaCat(false);
+    } catch (err) {
+      console.error('Error creando categoria:', err.message);
+    } finally {
+      setCreandoCat(false);
+    }
+  }
 
   const handleGuardar = async (e) => {
     e.preventDefault();
@@ -266,34 +297,89 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
                     <label className="form-label fw-semibold">
                       Categoria <span className="text-danger">*</span>
                     </label>
-                    <select
-                      name="categoria_id"
-                      className={`form-select ${errores.categoria_id ? 'is-invalid' : ''}`}
-                      value={form.categoria_id}
-                      onChange={handleChange}
-                    >
-                      <option value="">— Seleccionar —</option>
-                      {categorias.map((c) => (
-                        <option key={c.id} value={c.id}>{c.nombre}</option>
-                      ))}
-                    </select>
-                    {errores.categoria_id && <div className="invalid-feedback">{errores.categoria_id}</div>}
+                    <div className="d-flex gap-2">
+                      <select
+                        name="categoria_id"
+                        className={`form-select ${errores.categoria_id ? 'is-invalid' : ''}`}
+                        value={form.categoria_id}
+                        onChange={handleChange}
+                      >
+                        <option value="">— Seleccionar —</option>
+                        {categorias.map((c) => (
+                          <option key={c.id} value={c.id}>{c.nombre}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary flex-shrink-0"
+                        title="Añadir nueva categoría"
+                        onClick={() => setShowNuevaCat((v) => !v)}
+                      >
+                        <i className="bi bi-plus-lg" />
+                      </button>
+                    </div>
+                    {errores.categoria_id && (
+                      <div className="text-danger small mt-1">{errores.categoria_id}</div>
+                    )}
+                    {showNuevaCat && (
+                      <div className="d-flex gap-2 mt-2">
+                        <input
+                          type="text"
+                          className="form-control form-control-sm"
+                          placeholder="Nombre de la nueva categoría..."
+                          value={nuevaCatNombre}
+                          autoFocus
+                          onChange={(e) => setNuevaCatNombre(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') { e.preventDefault(); handleCrearCategoria(); }
+                            if (e.key === 'Escape') { setShowNuevaCat(false); setNuevaCatNombre(''); }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-success"
+                          disabled={creandoCat || !nuevaCatNombre.trim()}
+                          onClick={handleCrearCategoria}
+                        >
+                          {creandoCat
+                            ? <span className="spinner-border spinner-border-sm" />
+                            : <i className="bi bi-check-lg" />}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={() => { setShowNuevaCat(false); setNuevaCatNombre(''); }}
+                        >
+                          <i className="bi bi-x" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Proveedor */}
                   <div className="col-md-6">
                     <label className="form-label fw-semibold">Proveedor</label>
-                    <select
-                      name="proveedor_id"
-                      className="form-select"
-                      value={form.proveedor_id}
-                      onChange={handleChange}
-                    >
-                      <option value="">— Sin proveedor —</option>
-                      {proveedores.map((p) => (
-                        <option key={p.id} value={p.id}>{p.nombre}</option>
-                      ))}
-                    </select>
+                    <div className="d-flex gap-2">
+                      <select
+                        name="proveedor_id"
+                        className="form-select"
+                        value={form.proveedor_id}
+                        onChange={handleChange}
+                      >
+                        <option value="">— Sin proveedor —</option>
+                        {proveedores.map((p) => (
+                          <option key={p.id} value={p.id}>{p.nombre}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary flex-shrink-0"
+                        title="Añadir nuevo proveedor"
+                        onClick={() => setShowNuevoProv(true)}
+                      >
+                        <i className="bi bi-plus-lg" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Código interno */}
@@ -494,6 +580,18 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
         </div>
       </div>
       <div className="modal-backdrop fade show" />
+
+      {/* Modal para crear proveedor nuevo sin salir de este flujo */}
+      <AddProveedorModal
+        show={showNuevoProv}
+        onClose={() => setShowNuevoProv(false)}
+        onProveedorCreado={async (prov) => {
+          setShowNuevoProv(false);
+          const provs = await getProveedores();
+          setProveedores(provs);
+          if (prov?.id) setForm((f) => ({ ...f, proveedor_id: prov.id }));
+        }}
+      />
     </>
   );
 }

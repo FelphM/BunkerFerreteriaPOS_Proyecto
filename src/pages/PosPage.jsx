@@ -12,7 +12,7 @@
  * ---------------------------------------------------------------------------
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getSellableItems, getCategorias, getVariantesInventario } from '../data/queries';
+import { getSellableItems, getCategorias, getVariantesInventario, getClientes } from '../data/queries';
 import { usePosCart } from '../hooks/usePosCart';
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 import { formatCLP } from '../utils/format';
@@ -21,6 +21,7 @@ import CartPanel from '../components/CartPanel';
 import ProductGrid from '../components/ProductGrid';
 import CheckoutPanel from '../components/CheckoutPanel';
 import AddProductModal from '../components/AddProductModal';
+import AddClienteModal from '../components/AddClienteModal';
 import HeldSalesModal from '../components/HeldSalesModal';
 import { guardarCotizacion } from '../components/CotizacionesModal';
 import BajoStockModal from '../components/BajoStockModal';
@@ -39,12 +40,17 @@ export default function PosPage() {
   const [sellableItems, setSellableItems] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [clientes, setClientes] = useState([]);
 
   useEffect(() => {
     Promise.all([getSellableItems(), getCategorias()])
       .then(([items, cats]) => { setSellableItems(items); setCategorias(cats); })
       .catch(console.error)
       .finally(() => setCargando(false));
+  }, []);
+
+  useEffect(() => {
+    getClientes().then(setClientes).catch(console.error);
   }, []);
 
   // Carga productos con bajo stock al montar (se refresca al abrir el modal).
@@ -65,6 +71,7 @@ export default function PosPage() {
   const [cliente, setCliente] = useState('');
   const [notas, setNotas] = useState('');
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const [showNuevoCliente, setShowNuevoCliente] = useState(false);
   const [showHeldModal, setShowHeldModal] = useState(false);
   const [showBajoStock, setShowBajoStock] = useState(false);
   const [productosBajoStock, setProductosBajoStock] = useState([]);
@@ -262,6 +269,8 @@ export default function PosPage() {
           onCobrar={handleCobrar}
           onApartar={handleApartar}
           onCotizar={handleCotizar}
+          clientes={clientes}
+          onAbrirNuevoCliente={() => setShowNuevoCliente(true)}
         />
       </div>
 
@@ -270,6 +279,16 @@ export default function PosPage() {
         show={showAddProduct}
         onClose={() => setShowAddProduct(false)}
         onProductoCreado={handleProductoCreado}
+      />
+
+      {/* ===================== MODAL: NUEVO CLIENTE ==================== */}
+      <AddClienteModal
+        show={showNuevoCliente}
+        onClose={() => setShowNuevoCliente(false)}
+        onClienteCreado={() => {
+          setShowNuevoCliente(false);
+          getClientes().then(setClientes).catch(console.error);
+        }}
       />
 
       {/* ===================== MODAL: VENTAS APARTADAS ================= */}

@@ -106,10 +106,11 @@ const PosTopBar = forwardRef(function PosTopBar(
         )}
       </button>
 
-      {/* Fecha / Caja */}
-      <div className="text-end lh-sm flex-shrink-0">
-        <div className="text-secondary text-nowrap">{formatLongDate()}</div>
-        <strong className="text-nowrap">Caja #1</strong>
+      {/* Fecha */}
+      <div className="text-end lh-sm flex-shrink-0 d-none d-lg-block">
+        <div className="text-secondary text-nowrap" style={{ fontSize: '0.78rem' }}>
+          {formatLongDate()}
+        </div>
       </div>
     </header>
   );

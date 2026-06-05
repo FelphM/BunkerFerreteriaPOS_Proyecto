@@ -17,12 +17,14 @@ import { formatCLP, formatFecha } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
 import AddClienteModal from '../components/AddClienteModal';
+import EditClienteModal from '../components/EditClienteModal';
 
 export default function ClientesPage() {
   const { data: clientesRegistrados = [], refetch } = useQuery(getClientes);
   const { data: clientesVentas = [] } = useQuery(getClientesDerivados);
   const [busqueda, setBusqueda] = useState('');
   const [showAdd, setShowAdd] = useState(false);
+  const [editandoCliente, setEditandoCliente] = useState(null);
 
   // Fusiona ambas fuentes: clientes registrados enriquecidos con historial,
   // más clientes del historial de ventas que no tienen perfil creado.
@@ -125,7 +127,7 @@ export default function ClientesPage() {
       >
         <button
           type="button"
-          className="btn btn-sm fp-btn-accent"
+          className="btn fp-btn-accent"
           onClick={() => setShowAdd(true)}
         >
           <i className="bi bi-person-plus me-1" />
@@ -200,12 +202,13 @@ export default function ClientesPage() {
                   <th className="text-center">Compras</th>
                   <th className="text-end">Total gastado</th>
                   <th>Ultima compra</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
                 {filtrados.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="text-center text-secondary py-4">
+                    <td colSpan="8" className="text-center text-secondary py-4">
                       Sin clientes para la busqueda actual.
                     </td>
                   </tr>
@@ -230,6 +233,18 @@ export default function ClientesPage() {
                       <td className="text-nowrap text-secondary">
                         {c.ultima_compra ? formatFecha(c.ultima_compra) : '-'}
                       </td>
+                      <td className="text-end">
+                        {c.tiene_perfil && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-primary"
+                            title="Editar cliente"
+                            onClick={() => setEditandoCliente(c)}
+                          >
+                            <i className="bi bi-pencil" />
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -243,6 +258,12 @@ export default function ClientesPage() {
         show={showAdd}
         onClose={() => setShowAdd(false)}
         onClienteCreado={() => { setShowAdd(false); refetch(); }}
+      />
+
+      <EditClienteModal
+        cliente={editandoCliente}
+        onClose={() => setEditandoCliente(null)}
+        onClienteEditado={() => { setEditandoCliente(null); refetch(); }}
       />
     </>
   );

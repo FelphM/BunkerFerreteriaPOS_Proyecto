@@ -2,8 +2,8 @@
  * InventarioPage.jsx
  * ---------------------------------------------------------------------------
  * Inventario: listado de variantes (SKU) con stock, precios y estado.
- * Permite buscar, filtrar por categoria, ver solo alertas de stock y
- * consultar la bitacora de movimientos de cada variante.
+ * Permite buscar, filtrar por categoria, ver solo alertas de stock,
+ * añadir nuevos productos y editar los existentes.
  * ---------------------------------------------------------------------------
  */
 import { useMemo, useState } from 'react';
@@ -17,8 +17,10 @@ import { formatCLP, formatFechaHora } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
 import Modal from '../components/ui/Modal';
+import AddProductModal from '../components/AddProductModal';
+import EditProductModal from '../components/EditProductModal';
+import AjusteStockModal from '../components/AjusteStockModal';
 
-// Etiquetas de color para los tipos de movimiento de inventario.
 const COLOR_MOVIMIENTO = {
   VENTA: 'danger',
   INGRESO_PROVEEDOR: 'success',
@@ -26,7 +28,6 @@ const COLOR_MOVIMIENTO = {
   CARGA_INICIAL: 'secondary',
 };
 
-/** Devuelve el estado de stock de una variante. */
 function estadoStock(v) {
   if (!v.activo) return { texto: 'Inactivo', color: 'secondary' };
   if (v.stock_actual <= 0) return { texto: 'Agotado', color: 'danger' };
@@ -36,7 +37,7 @@ function estadoStock(v) {
 }
 
 export default function InventarioPage() {
-  const { data: variantes = [] } = useQuery(getVariantesInventario);
+  const { data: variantes = [], refetch: refetchVariantes } = useQuery(getVariantesInventario);
   const { data: categorias = [] } = useQuery(getCategorias);
 
   const [busqueda, setBusqueda] = useState('');
@@ -44,7 +45,11 @@ export default function InventarioPage() {
   const [soloAlertas, setSoloAlertas] = useState(false);
   const [varianteSel, setVarianteSel] = useState(null);
 
-  // Filtrado combinado.
+  // Modales de producto
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editandoVariante, setEditandoVariante] = useState(null);
+  const [ajustandoStock, setAjustandoStock] = useState(null);
+
   const filtradas = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     return variantes.filter((v) => {
@@ -61,7 +66,6 @@ export default function InventarioPage() {
     });
   }, [variantes, busqueda, categoriaId, soloAlertas]);
 
-  // KPIs.
   const kpis = useMemo(() => {
     const activas = variantes.filter((v) => v.activo);
     return {
@@ -72,7 +76,6 @@ export default function InventarioPage() {
     };
   }, [variantes]);
 
-  // Movimientos de la variante abierta en el modal (async).
   const { data: movimientos = [] } = useQuery(
     () => (varianteSel ? getMovimientosPorVariante(varianteSel.id) : Promise.resolve([])),
     [varianteSel?.id],
@@ -90,12 +93,7 @@ export default function InventarioPage() {
         {/* KPIs */}
         <div className="row g-3 mb-3">
           <div className="col-sm-6 col-xl-3">
-            <StatCard
-              titulo="Variantes"
-              valor={kpis.total}
-              icono="bi-upc"
-              color="primary"
-            />
+            <StatCard titulo="Variantes" valor={kpis.total} icono="bi-upc" color="primary" />
           </div>
           <div className="col-sm-6 col-xl-3">
             <StatCard
@@ -107,24 +105,14 @@ export default function InventarioPage() {
             />
           </div>
           <div className="col-sm-6 col-xl-3">
-            <StatCard
-              titulo="Stock bajo"
-              valor={kpis.bajo}
-              icono="bi-exclamation-triangle"
-              color="warning"
-            />
+            <StatCard titulo="Stock bajo" valor={kpis.bajo} icono="bi-exclamation-triangle" color="warning" />
           </div>
           <div className="col-sm-6 col-xl-3">
-            <StatCard
-              titulo="Agotados"
-              valor={kpis.agotados}
-              icono="bi-x-octagon"
-              color="danger"
-            />
+            <StatCard titulo="Agotados" valor={kpis.agotados} icono="bi-x-octagon" color="danger" />
           </div>
         </div>
 
-        {/* Filtros */}
+        {/* Filtros + tabla */}
         <div className="card border-0 shadow-sm">
           <div className="card-header bg-white d-flex flex-wrap gap-2 align-items-center">
             <div className="input-group input-group-sm fp-filtro-busqueda">
@@ -139,6 +127,7 @@ export default function InventarioPage() {
                 onChange={(e) => setBusqueda(e.target.value)}
               />
             </div>
+
             <select
               className="form-select form-select-sm w-auto"
               value={categoriaId}
@@ -146,11 +135,10 @@ export default function InventarioPage() {
             >
               <option value="">Todas las categorias</option>
               {categorias.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
+                <option key={c.id} value={c.id}>{c.nombre}</option>
               ))}
             </select>
+
             <div className="form-check form-switch ms-1">
               <input
                 className="form-check-input"
@@ -163,9 +151,18 @@ export default function InventarioPage() {
                 Solo stock bajo
               </label>
             </div>
-            <span className="ms-auto small text-secondary">
-              {filtradas.length} resultado(s)
-            </span>
+
+            <div className="ms-auto d-flex align-items-center gap-2">
+              <span className="small text-secondary">{filtradas.length} resultado(s)</span>
+              <button
+                type="button"
+                className="btn fp-btn-accent"
+                onClick={() => setShowAddModal(true)}
+              >
+                <i className="bi bi-plus-circle-fill me-1" />
+                Añadir Producto
+              </button>
+            </div>
           </div>
 
           {/* Tabla */}
@@ -198,38 +195,46 @@ export default function InventarioPage() {
                       <tr key={v.id}>
                         <td className="text-nowrap">
                           <div>{v.codigo_interno}</div>
-                          <small className="text-secondary">
-                            {v.codigo_barras}
-                          </small>
+                          <small className="text-secondary">{v.codigo_barras}</small>
                         </td>
                         <td>
-                          <div className="fw-semibold text-nowrap">
-                            {v.producto_nombre}
-                          </div>
+                          <div className="fw-semibold text-nowrap">{v.producto_nombre}</div>
                           <small className="text-secondary">
                             {v.variante_nombre} &middot; {v.unidad_venta}
                           </small>
                         </td>
                         <td className="text-nowrap">{v.categoria_nombre}</td>
-                        <td className="text-end text-nowrap">
-                          {formatCLP(v.precio_compra)}
-                        </td>
+                        <td className="text-end text-nowrap">{formatCLP(v.precio_compra)}</td>
                         <td className="text-end">{v.margen_ganancia}%</td>
-                        <td className="text-end text-nowrap fw-semibold">
-                          {formatCLP(v.precio_venta)}
-                        </td>
+                        <td className="text-end text-nowrap fw-semibold">{formatCLP(v.precio_venta)}</td>
                         <td className="text-end">
                           {v.stock_actual} {v.unidad_venta}
                         </td>
                         <td>
-                          <span className={`badge bg-${estado.color}`}>
-                            {estado.texto}
-                          </span>
+                          <span className={`badge bg-${estado.color}`}>{estado.texto}</span>
                         </td>
-                        <td className="text-end">
+                        <td className="text-end text-nowrap">
                           <button
                             type="button"
-                            className="btn btn-sm btn-outline-secondary text-nowrap"
+                            className="btn btn-sm btn-outline-primary me-1"
+                            title="Editar producto"
+                            onClick={() =>
+                              setEditandoVariante({ id: v.id, id_producto: v.producto_id })
+                            }
+                          >
+                            <i className="bi bi-pencil" />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-success me-1"
+                            title="Ajustar stock"
+                            onClick={() => setAjustandoStock(v)}
+                          >
+                            <i className="bi bi-boxes" />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
                             onClick={() => setVarianteSel(v)}
                           >
                             <i className="bi bi-clock-history me-1" />
@@ -245,6 +250,33 @@ export default function InventarioPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal: añadir nuevo producto */}
+      <AddProductModal
+        show={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onProductoCreado={() => refetchVariantes()}
+      />
+
+      {/* Modal: editar producto existente */}
+      <EditProductModal
+        item={editandoVariante}
+        onClose={() => setEditandoVariante(null)}
+        onGuardado={() => {
+          refetchVariantes();
+          setEditandoVariante(null);
+        }}
+      />
+
+      {/* Modal: ajuste de stock */}
+      <AjusteStockModal
+        variante={ajustandoStock}
+        onClose={() => setAjustandoStock(null)}
+        onAjustado={() => {
+          refetchVariantes();
+          setAjustandoStock(null);
+        }}
+      />
 
       {/* Modal: movimientos de la variante */}
       <Modal
@@ -290,11 +322,7 @@ export default function InventarioPage() {
                       {formatFechaHora(m.creado_en)}
                     </td>
                     <td>
-                      <span
-                        className={`badge bg-${
-                          COLOR_MOVIMIENTO[m.tipo_movimiento] || 'secondary'
-                        }`}
-                      >
+                      <span className={`badge bg-${COLOR_MOVIMIENTO[m.tipo_movimiento] || 'secondary'}`}>
                         {m.tipo_movimiento.replace('_', ' ')}
                       </span>
                     </td>
@@ -302,9 +330,7 @@ export default function InventarioPage() {
                     <td className="text-end text-nowrap">
                       {m.stock_anterior} &rarr; {m.stock_nuevo}
                     </td>
-                    <td>
-                      <small>{m.observaciones}</small>
-                    </td>
+                    <td><small>{m.observaciones}</small></td>
                   </tr>
                 ))}
               </tbody>

@@ -1,23 +1,17 @@
 /**
- * AddProveedorModal.jsx
+ * EditProveedorModal.jsx
  * ---------------------------------------------------------------------------
- * Formulario para registrar un nuevo proveedor en Supabase.
- * Campos: nombre (requerido), telefono, correo, direccion, observaciones.
+ * Formulario para editar un proveedor existente en la tabla `proveedores`.
  * ---------------------------------------------------------------------------
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import Modal from './ui/Modal';
 
-const VACIO = {
-  nombre: '',
-  telefono: '',
-  correo: '',
-  direccion: '',
-  observaciones: '',
-};
+const VACIO = { nombre: '', telefono: '', correo: '', direccion: '', observaciones: '' };
 
-export default function AddProveedorModal({ show, onClose, onProveedorCreado }) {
+export default function EditProveedorModal({ proveedor, onClose, onProveedorEditado }) {
+  const show = !!proveedor;
   const [form, setForm] = useState(VACIO);
   const [errores, setErrores] = useState({});
   const [guardando, setGuardando] = useState(false);
@@ -29,10 +23,26 @@ export default function AddProveedorModal({ show, onClose, onProveedorCreado }) 
     setErrorGlobal(null);
   }
 
+  useEffect(() => {
+    if (!proveedor) return;
+    setErrores({});
+    setErrorGlobal(null);
+    setForm({
+      nombre:        proveedor.nombre        ?? '',
+      telefono:      proveedor.telefono      ?? '',
+      correo:        proveedor.correo        ?? '',
+      direccion:     proveedor.direccion     ?? '',
+      observaciones: proveedor.observaciones ?? '',
+    });
+  }, [proveedor]);
+
   function validar() {
     const e = {};
     if (!form.nombre.trim()) e.nombre = 'El nombre es obligatorio.';
-    if (form.correo.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo.trim())) {
+    if (
+      form.correo.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo.trim())
+    ) {
       e.correo = 'El correo no tiene un formato valido.';
     }
     return e;
@@ -45,15 +55,19 @@ export default function AddProveedorModal({ show, onClose, onProveedorCreado }) 
     setGuardando(true);
     setErrorGlobal(null);
     try {
-      const { data, error } = await supabase.from('proveedores').insert({
-        nombre: form.nombre.trim(),
-        telefono: form.telefono.trim() || null,
-        correo: form.correo.trim() || null,
-        direccion: form.direccion.trim() || null,
-        observaciones: form.observaciones.trim() || null,
-      }).select().single();
+      const { error } = await supabase
+        .from('proveedores')
+        .update({
+          nombre:        form.nombre.trim(),
+          telefono:      form.telefono.trim()      || null,
+          correo:        form.correo.trim()        || null,
+          direccion:     form.direccion.trim()     || null,
+          observaciones: form.observaciones.trim() || null,
+        })
+        .eq('id', proveedor.id);
+
       if (error) throw new Error(error.message);
-      onProveedorCreado?.(data);
+      onProveedorEditado?.();
       handleClose();
     } catch (err) {
       setErrorGlobal(err.message);
@@ -83,7 +97,7 @@ export default function AddProveedorModal({ show, onClose, onProveedorCreado }) 
         {guardando ? (
           <><span className="spinner-border spinner-border-sm me-2" />Guardando...</>
         ) : (
-          <><i className="bi bi-check-lg me-1" />Guardar proveedor</>
+          <><i className="bi bi-check-lg me-1" />Guardar cambios</>
         )}
       </button>
     </>
@@ -93,7 +107,7 @@ export default function AddProveedorModal({ show, onClose, onProveedorCreado }) 
     <Modal
       show={show}
       onClose={handleClose}
-      titulo="Nuevo proveedor"
+      titulo="Editar proveedor"
       icono="bi-truck"
       size="lg"
       footer={footer}
@@ -106,7 +120,6 @@ export default function AddProveedorModal({ show, onClose, onProveedorCreado }) 
       )}
 
       <div className="row g-3">
-        {/* Nombre */}
         <div className="col-12">
           <label className="form-label fw-semibold">
             Nombre <span className="text-danger">*</span>
@@ -122,7 +135,6 @@ export default function AddProveedorModal({ show, onClose, onProveedorCreado }) 
           {errores.nombre && <div className="invalid-feedback">{errores.nombre}</div>}
         </div>
 
-        {/* Telefono + Correo */}
         <div className="col-sm-6">
           <label className="form-label fw-semibold">Telefono</label>
           <input
@@ -145,7 +157,6 @@ export default function AddProveedorModal({ show, onClose, onProveedorCreado }) 
           {errores.correo && <div className="invalid-feedback">{errores.correo}</div>}
         </div>
 
-        {/* Direccion */}
         <div className="col-12">
           <label className="form-label fw-semibold">Direccion</label>
           <input
@@ -157,7 +168,6 @@ export default function AddProveedorModal({ show, onClose, onProveedorCreado }) 
           />
         </div>
 
-        {/* Observaciones */}
         <div className="col-12">
           <label className="form-label fw-semibold">Observaciones</label>
           <textarea

@@ -6,15 +6,19 @@
  * Modos:
  *   lista   → tabla general con KPIs
  *   detalle → información completa de una cotización (solo lectura)
- *   editar  → formulario para modificar cliente, notas e items
+ *   editar  → formulario para modificar cliente, notas e items;
+ *             permite buscar y añadir productos del inventario (sin afectar stock)
+ *             y buscar o registrar clientes como en el POS.
  * ---------------------------------------------------------------------------
  */
-import { useState, useMemo } from 'react';
-import { formatCLP, formatFecha } from '../utils/format';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { formatCLP } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
-import { leerCotizaciones, guardarCotizacion } from '../components/CotizacionesModal';
+import AddClienteModal from '../components/AddClienteModal';
+import { leerCotizaciones } from '../components/CotizacionesModal';
 import { imprimirCotizacion } from '../utils/print';
+import { getSellableItems, getClientes } from '../data/queries';
 
 const LS_KEY = 'fp_cotizaciones';
 
@@ -37,7 +41,7 @@ function eliminarCotizacion(id) {
 
 export default function CotizacionesPage() {
   const [tick, setTick] = useState(0);
-  const [modo, setModo] = useState('lista'); // 'lista' | 'detalle' | 'editar'
+  const [modo, setModo] = useState('lista');
   const [seleccionada, setSeleccionada] = useState(null);
   const [busqueda, setBusqueda] = useState('');
 
@@ -60,15 +64,8 @@ export default function CotizacionesPage() {
 
   function refetch() { setTick((n) => n + 1); }
 
-  function verDetalle(c) {
-    setSeleccionada(c);
-    setModo('detalle');
-  }
-
-  function irEditar(c) {
-    setSeleccionada(c);
-    setModo('editar');
-  }
+  function verDetalle(c) { setSeleccionada(c); setModo('detalle'); }
+  function irEditar(c)   { setSeleccionada(c); setModo('editar'); }
 
   function volver() {
     setSeleccionada(null);
@@ -90,13 +87,10 @@ export default function CotizacionesPage() {
     refetch();
   }
 
-  // Breadcrumb title
   const subtitulo =
-    modo === 'lista'
-      ? `${kpis.cantidad} cotizacion(es) guardadas`
-      : modo === 'editar'
-      ? 'Editando cotización'
-      : 'Detalle de cotización';
+    modo === 'lista'   ? `${kpis.cantidad} cotizacion(es) guardadas`
+    : modo === 'editar'  ? 'Editando cotización'
+    : 'Detalle de cotización';
 
   return (
     <>
@@ -243,7 +237,6 @@ function DetalleView({ cotizacion, onEditar, onEliminar }) {
 
   return (
     <div className="row g-3">
-      {/* Encabezado general */}
       <div className="col-12">
         <div className="card border-0 shadow-sm">
           <div className="card-header bg-white d-flex justify-content-between align-items-center">
@@ -288,7 +281,6 @@ function DetalleView({ cotizacion, onEditar, onEliminar }) {
         </div>
       </div>
 
-      {/* Detalle de items */}
       <div className="col-12">
         <div className="card border-0 shadow-sm">
           <div className="card-header bg-white fw-semibold">
@@ -323,17 +315,7 @@ function DetalleView({ cotizacion, onEditar, onEliminar }) {
             </table>
           </div>
           <div className="card-footer bg-white">
-            <div className="d-flex flex-column align-items-end gap-1">
-              <div className="text-muted small">
-                Subtotal (neto): <span className="text-body ms-2 fw-semibold">{formatCLP(subtotal)}</span>
-              </div>
-              <div className="text-muted small">
-                IVA (19%): <span className="text-body ms-2 fw-semibold">{formatCLP(iva)}</span>
-              </div>
-              <div className="fw-bold fs-5 mt-1">
-                Total: <span className="text-warning ms-2">{formatCLP(total)}</span>
-              </div>
-            </div>
+            <TotalesFooter subtotal={subtotal} iva={iva} total={total} />
           </div>
         </div>
       </div>
@@ -347,20 +329,100 @@ function DetalleView({ cotizacion, onEditar, onEliminar }) {
 function EditarView({ cotizacion, onGuardar, onCancelar }) {
   const [cliente, setCliente] = useState(cotizacion.cliente ?? '');
   const [notas, setNotas] = useState(cotizacion.notas ?? '');
-  const [items, setItems] = useState(
-    cotizacion.items.map((it) => ({ ...it })),
-  );
+  const [items, setItems] = useState(cotizacion.items.map((it) => ({ ...it })));
+
+  // Datos para búsqueda de productos del inventario
+  const [sellableItems, setSellableItems] = useState([]);
+  const [busquedaProd, setBusquedaProd] = useState('');
+  const [showProdDropdown, setShowProdDropdown] = useState(false);
+  const prodWrapRef = useRef(null);
+
+  // Datos para búsqueda de clientes
+  const [clientes, setClientes] = useState([]);
+  const [showClienteDropdown, setShowClienteDropdown] = useState(false);
+  const clienteWrapRef = useRef(null);
+  const [showNuevoCliente, setShowNuevoCliente] = useState(false);
+
+  useEffect(() => {
+    getSellableItems().then(setSellableItems).catch(console.error);
+    getClientes().then(setClientes).catch(console.error);
+  }, []);
+
+  // Cerrar dropdown de productos al hacer clic fuera
+  useEffect(() => {
+    if (!showProdDropdown) return undefined;
+    const h = (e) => {
+      if (prodWrapRef.current && !prodWrapRef.current.contains(e.target))
+        setShowProdDropdown(false);
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [showProdDropdown]);
+
+  // Cerrar dropdown de cliente al hacer clic fuera
+  useEffect(() => {
+    if (!showClienteDropdown) return undefined;
+    const h = (e) => {
+      if (clienteWrapRef.current && !clienteWrapRef.current.contains(e.target))
+        setShowClienteDropdown(false);
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [showClienteDropdown]);
+
+  // Productos filtrados por búsqueda
+  const prodsFiltrados = useMemo(() => {
+    const q = busquedaProd.trim().toLowerCase();
+    if (!q) return [];
+    return sellableItems
+      .filter(
+        (p) =>
+          p.nombre?.toLowerCase().includes(q) ||
+          p.codigo?.toLowerCase().includes(q) ||
+          p.codigo_barras?.toLowerCase().includes(q),
+      )
+      .slice(0, 8);
+  }, [sellableItems, busquedaProd]);
+
+  // Clientes filtrados por texto del campo
+  const clientesFiltrados = useMemo(() => {
+    const q = cliente.trim().toLowerCase();
+    if (!q) return clientes.slice(0, 8);
+    return clientes
+      .filter(
+        (c) =>
+          c.nombre?.toLowerCase().includes(q) ||
+          c.rut?.toLowerCase().includes(q),
+      )
+      .slice(0, 8);
+  }, [clientes, cliente]);
 
   const IVA_PCT = 0.19;
 
   const totales = useMemo(() => {
-    const subtotalBruto = items.reduce(
-      (s, it) => s + it.cantidad * it.precio_unitario, 0,
-    );
+    const subtotalBruto = items.reduce((s, it) => s + it.cantidad * it.precio_unitario, 0);
     const subtotal = Math.round(subtotalBruto / (1 + IVA_PCT));
     const iva = Math.round(subtotalBruto - subtotal);
     return { subtotal, iva, total: Math.round(subtotalBruto) };
   }, [items]);
+
+  function addProducto(p) {
+    const nombre = p.tieneVariantes ? `${p.nombre} (${p.variante_nombre})` : p.nombre;
+    setItems((prev) => {
+      const idx = prev.findIndex((it) => it.sku === (p.codigo || null) && it.nombre === nombre);
+      if (idx >= 0) {
+        return prev.map((it, i) =>
+          i === idx ? { ...it, cantidad: it.cantidad + 1 } : it,
+        );
+      }
+      return [
+        ...prev,
+        { nombre, sku: p.codigo || null, cantidad: 1, precio_unitario: p.precio_venta },
+      ];
+    });
+    setBusquedaProd('');
+    setShowProdDropdown(false);
+  }
 
   function setCantidad(idx, val) {
     const n = Math.max(0, Number(val) || 0);
@@ -394,130 +456,285 @@ function EditarView({ cotizacion, onGuardar, onCancelar }) {
   }
 
   return (
-    <div className="row g-3">
-      {/* Datos generales */}
-      <div className="col-12">
-        <div className="card border-0 shadow-sm">
-          <div className="card-header bg-white fw-semibold">
-            <i className="bi bi-pencil me-2 text-warning" />
-            Datos generales
-          </div>
-          <div className="card-body">
-            <div className="row g-3">
-              <div className="col-sm-6">
-                <label className="form-label fw-semibold">Cliente</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={cliente}
-                  onChange={(e) => setCliente(e.target.value)}
-                  placeholder="Nombre del cliente"
-                />
-              </div>
-              <div className="col-sm-6">
-                <label className="form-label fw-semibold">Notas</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={notas}
-                  onChange={(e) => setNotas(e.target.value)}
-                  placeholder="Observaciones..."
-                />
-              </div>
+    <>
+      <div className="row g-3">
+        {/* Datos generales */}
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white fw-semibold">
+              <i className="bi bi-pencil me-2 text-warning" />
+              Datos generales
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Items */}
-      <div className="col-12">
-        <div className="card border-0 shadow-sm">
-          <div className="card-header bg-white fw-semibold">
-            <i className="bi bi-list-ul me-2 text-warning" />
-            Productos
-          </div>
-          <div className="table-responsive">
-            <table className="table table-sm align-middle m-0">
-              <thead className="table-light">
-                <tr>
-                  <th>Producto</th>
-                  <th className="text-center" style={{ width: 110 }}>Cantidad</th>
-                  <th className="text-end" style={{ width: 140 }}>P. Unit. ($)</th>
-                  <th className="text-end">Subtotal</th>
-                  <th style={{ width: 48 }} />
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, i) => (
-                  // eslint-disable-next-line react/no-array-index-key
-                  <tr key={i}>
-                    <td>
-                      <div className="fw-semibold">{item.nombre}</div>
-                      {item.sku && <small className="text-muted">{item.sku}</small>}
-                    </td>
-                    <td>
+            <div className="card-body">
+              <div className="row g-3">
+                {/* Campo cliente con autocomplete */}
+                <div className="col-sm-6">
+                  <label className="form-label fw-semibold">Cliente</label>
+                  <div className="fp-cliente-wrap" ref={clienteWrapRef}>
+                    <div className="input-group">
                       <input
-                        type="number"
-                        className="form-control form-control-sm text-center"
-                        min="0"
-                        step="1"
-                        value={item.cantidad}
-                        onChange={(e) => setCantidad(i, e.target.value)}
+                        type="text"
+                        className="form-control"
+                        value={cliente}
+                        autoComplete="off"
+                        placeholder="Nombre del cliente"
+                        onChange={(e) => {
+                          setCliente(e.target.value);
+                          setShowClienteDropdown(true);
+                        }}
+                        onFocus={() => setShowClienteDropdown(true)}
                       />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        className="form-control form-control-sm text-end"
-                        min="0"
-                        step="1"
-                        value={item.precio_unitario}
-                        onChange={(e) => setPrecio(i, e.target.value)}
-                      />
-                    </td>
-                    <td className="text-end fw-semibold">
-                      {formatCLP(item.cantidad * item.precio_unitario)}
-                    </td>
-                    <td className="text-center">
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline-danger"
-                        onClick={() => eliminarItem(i)}
-                        title="Quitar"
+                        className="btn btn-outline-secondary"
+                        title="Buscar cliente"
+                        onClick={() => setShowClienteDropdown((v) => !v)}
                       >
-                        <i className="bi bi-x" />
+                        <i className={`bi ${showClienteDropdown ? 'bi-chevron-up' : 'bi-search'}`} />
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="card-footer bg-white">
-            <div className="d-flex flex-column align-items-end gap-1">
-              <div className="text-muted small">
-                Subtotal (neto): <span className="text-body ms-2 fw-semibold">{formatCLP(totales.subtotal)}</span>
-              </div>
-              <div className="text-muted small">
-                IVA (19%): <span className="text-body ms-2 fw-semibold">{formatCLP(totales.iva)}</span>
-              </div>
-              <div className="fw-bold fs-5 mt-1">
-                Total: <span className="text-warning ms-2">{formatCLP(totales.total)}</span>
+                    </div>
+
+                    {showClienteDropdown && (
+                      <div className="fp-cliente-dropdown">
+                        {clientesFiltrados.length > 0 ? (
+                          clientesFiltrados.map((c) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              className="fp-cliente-option"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                setCliente(c.nombre);
+                                setShowClienteDropdown(false);
+                              }}
+                            >
+                              <span className="fw-semibold">{c.nombre}</span>
+                              {c.rut && <small className="text-secondary">{c.rut}</small>}
+                            </button>
+                          ))
+                        ) : (
+                          <div className="fp-cliente-empty">Sin coincidencias</div>
+                        )}
+                        <button
+                          type="button"
+                          className="fp-cliente-option fp-cliente-option-nuevo"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            setShowClienteDropdown(false);
+                            setShowNuevoCliente(true);
+                          }}
+                        >
+                          <i className="bi bi-person-plus me-2" />
+                          Registrar nuevo cliente
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="col-sm-6">
+                  <label className="form-label fw-semibold">Notas</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={notas}
+                    onChange={(e) => setNotas(e.target.value)}
+                    placeholder="Observaciones..."
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Tabla de items */}
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white d-flex align-items-center gap-3 flex-wrap">
+              <span className="fw-semibold">
+                <i className="bi bi-list-ul me-2 text-warning" />
+                Productos
+              </span>
+
+              {/* Buscador de productos del inventario */}
+              <div className="fp-cliente-wrap ms-auto" style={{ width: 300 }} ref={prodWrapRef}>
+                <div className="input-group input-group-sm">
+                  <span className="input-group-text bg-white">
+                    <i className="bi bi-search" />
+                  </span>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Buscar producto del inventario..."
+                    value={busquedaProd}
+                    autoComplete="off"
+                    onChange={(e) => {
+                      setBusquedaProd(e.target.value);
+                      setShowProdDropdown(true);
+                    }}
+                    onFocus={() => busquedaProd && setShowProdDropdown(true)}
+                  />
+                  {busquedaProd && (
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary btn-sm"
+                      onClick={() => { setBusquedaProd(''); setShowProdDropdown(false); }}
+                    >
+                      <i className="bi bi-x" />
+                    </button>
+                  )}
+                </div>
+
+                {showProdDropdown && busquedaProd && (
+                  <div className="fp-cliente-dropdown">
+                    {prodsFiltrados.length > 0 ? (
+                      prodsFiltrados.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          className="fp-cliente-option"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => addProducto(p)}
+                        >
+                          <span className="fw-semibold">
+                            {p.nombre}
+                            {p.tieneVariantes && (
+                              <span className="text-secondary fw-normal"> · {p.variante_nombre}</span>
+                            )}
+                          </span>
+                          <small className="text-secondary">
+                            {formatCLP(p.precio_venta)} / {p.unidad_venta}
+                            {p.stock_actual != null && ` · Stock: ${p.stock_actual}`}
+                          </small>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="fp-cliente-empty">
+                        Sin resultados para &ldquo;{busquedaProd}&rdquo;
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="table-responsive">
+              <table className="table table-sm align-middle m-0">
+                <thead className="table-light">
+                  <tr>
+                    <th>Producto</th>
+                    <th className="text-center" style={{ width: 110 }}>Cantidad</th>
+                    <th className="text-end" style={{ width: 140 }}>P. Unit. ($)</th>
+                    <th className="text-end">Subtotal</th>
+                    <th style={{ width: 48 }} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="text-center text-secondary py-3">
+                        <small>Busca y añade productos usando el buscador de arriba.</small>
+                      </td>
+                    </tr>
+                  ) : (
+                    items.map((item, i) => (
+                      // eslint-disable-next-line react/no-array-index-key
+                      <tr key={i}>
+                        <td>
+                          <div className="fw-semibold">{item.nombre}</div>
+                          {item.sku && <small className="text-muted">{item.sku}</small>}
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            className="form-control form-control-sm text-center"
+                            min="0"
+                            step="1"
+                            value={item.cantidad}
+                            onChange={(e) => setCantidad(i, e.target.value)}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            className="form-control form-control-sm text-end"
+                            min="0"
+                            step="1"
+                            value={item.precio_unitario}
+                            onChange={(e) => setPrecio(i, e.target.value)}
+                          />
+                        </td>
+                        <td className="text-end fw-semibold">
+                          {formatCLP(item.cantidad * item.precio_unitario)}
+                        </td>
+                        <td className="text-center">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => eliminarItem(i)}
+                            title="Quitar"
+                          >
+                            <i className="bi bi-x" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="card-footer bg-white">
+              <TotalesFooter
+                subtotal={totales.subtotal}
+                iva={totales.iva}
+                total={totales.total}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Acciones */}
+        <div className="col-12 d-flex justify-content-end gap-2 pb-2">
+          <button type="button" className="btn btn-outline-secondary" onClick={onCancelar}>
+            Cancelar
+          </button>
+          <button type="button" className="btn fp-btn-accent" onClick={handleGuardar}>
+            <i className="bi bi-check-lg me-1" />
+            Guardar cambios
+          </button>
+        </div>
       </div>
 
-      {/* Acciones */}
-      <div className="col-12 d-flex justify-content-end gap-2 pb-2">
-        <button type="button" className="btn btn-outline-secondary" onClick={onCancelar}>
-          Cancelar
-        </button>
-        <button type="button" className="btn fp-btn-accent" onClick={handleGuardar}>
-          <i className="bi bi-check-lg me-1" />
-          Guardar cambios
-        </button>
+      {/* Modal para registrar cliente nuevo desde la cotización */}
+      <AddClienteModal
+        show={showNuevoCliente}
+        onClose={() => setShowNuevoCliente(false)}
+        onClienteCreado={(/* c */) => {
+          setShowNuevoCliente(false);
+          getClientes().then(setClientes).catch(console.error);
+        }}
+      />
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Componente compartido: pie con totales
+
+function TotalesFooter({ subtotal, iva, total }) {
+  return (
+    <div className="d-flex flex-column align-items-end gap-1">
+      <div className="text-muted small">
+        Subtotal (neto):{' '}
+        <span className="text-body ms-2 fw-semibold">{formatCLP(subtotal)}</span>
+      </div>
+      <div className="text-muted small">
+        IVA (19%):{' '}
+        <span className="text-body ms-2 fw-semibold">{formatCLP(iva)}</span>
+      </div>
+      <div className="fw-bold fs-5 mt-1">
+        Total: <span className="text-warning ms-2">{formatCLP(total)}</span>
       </div>
     </div>
   );

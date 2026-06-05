@@ -11,11 +11,13 @@ import { useQuery } from '../hooks/useQuery';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
 import AddProveedorModal from '../components/AddProveedorModal';
+import EditProveedorModal from '../components/EditProveedorModal';
 
 export default function ProveedoresPage() {
   const { data: proveedores = [], refetch } = useQuery(getProveedores);
   const [busqueda, setBusqueda] = useState('');
   const [showAdd, setShowAdd] = useState(false);
+  const [editandoProveedor, setEditandoProveedor] = useState(null);
 
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -42,7 +44,7 @@ export default function ProveedoresPage() {
       >
         <button
           type="button"
-          className="btn btn-sm fp-btn-accent"
+          className="btn fp-btn-accent"
           onClick={() => setShowAdd(true)}
         >
           <i className="bi bi-plus-lg me-1" />
@@ -100,12 +102,13 @@ export default function ProveedoresPage() {
                   <th>Correo</th>
                   <th className="text-center">Productos</th>
                   <th>Observaciones</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
                 {filtrados.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="text-center text-secondary py-4">
+                    <td colSpan="6" className="text-center text-secondary py-4">
                       Sin proveedores para la busqueda actual.
                     </td>
                   </tr>
@@ -132,6 +135,16 @@ export default function ProveedoresPage() {
                           {p.observaciones || '-'}
                         </small>
                       </td>
+                      <td className="text-end">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-primary"
+                          title="Editar proveedor"
+                          onClick={() => setEditandoProveedor(p)}
+                        >
+                          <i className="bi bi-pencil" />
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -145,6 +158,12 @@ export default function ProveedoresPage() {
         show={showAdd}
         onClose={() => setShowAdd(false)}
         onProveedorCreado={() => { setShowAdd(false); refetch?.(); }}
+      />
+
+      <EditProveedorModal
+        proveedor={editandoProveedor}
+        onClose={() => setEditandoProveedor(null)}
+        onProveedorEditado={() => { setEditandoProveedor(null); refetch(); }}
       />
     </>
   );
