@@ -5,7 +5,7 @@
  */
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { getVentas, getVariantesInventario, getVentasEnEspera, getDetalleVentasGlobal } from '../data/queries';
+import { getVentas, getVariantesInventario, getVentasEnEspera, getDetalleVentasGlobal, getFacturas } from '../data/queries';
 import { useQuery } from '../hooks/useQuery';
 import { formatCLP, formatFechaHora, esHoy, esMesActual } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
@@ -16,8 +16,26 @@ export default function DashboardPage() {
   const { data: variantes = [], loading: linv } = useQuery(getVariantesInventario);
   const { data: enEspera = [], loading: les } = useQuery(getVentasEnEspera);
   const { data: detalle = [], loading: ldet } = useQuery(getDetalleVentasGlobal);
+  const { data: facturas = [] } = useQuery(getFacturas);
 
   const loading = lvt || linv || les || ldet;
+
+  const alertasFacturas = useMemo(() => {
+    const DIAS_ALERTA = 7;
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const activas = facturas.filter((f) => !['pagada', 'anulada'].includes(f.estado_pago) && f.fecha_vencimiento);
+    const vencidas = activas.filter((f) => {
+      const [y, m, d] = f.fecha_vencimiento.split('-').map(Number);
+      return new Date(y, m - 1, d) < hoy;
+    });
+    const porVencer = activas.filter((f) => {
+      const [y, m, d] = f.fecha_vencimiento.split('-').map(Number);
+      const venc = new Date(y, m - 1, d);
+      const dias = Math.ceil((venc - hoy) / 86400000);
+      return dias >= 0 && dias <= DIAS_ALERTA;
+    });
+    return { vencidas: vencidas.length, porVencer: porVencer.length };
+  }, [facturas]);
 
   const datos = useMemo(() => {
     const ventasHoy = ventas.filter((v) => esHoy(v.creado_en));
@@ -58,6 +76,27 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
+            {/* Banner facturas por pagar */}
+            {(alertasFacturas.vencidas > 0 || alertasFacturas.porVencer > 0) && (
+              <div className={`alert alert-${alertasFacturas.vencidas > 0 ? 'danger' : 'warning'} d-flex align-items-center justify-content-between gap-2 py-2 mb-3`}>
+                <div className="d-flex align-items-center gap-2">
+                  <i className="bi bi-receipt fs-5 flex-shrink-0" />
+                  <span>
+                    {alertasFacturas.vencidas > 0 && (
+                      <strong>{alertasFacturas.vencidas} factura{alertasFacturas.vencidas > 1 ? 's' : ''} vencida{alertasFacturas.vencidas > 1 ? 's' : ''}</strong>
+                    )}
+                    {alertasFacturas.vencidas > 0 && alertasFacturas.porVencer > 0 && ' · '}
+                    {alertasFacturas.porVencer > 0 && (
+                      <span>{alertasFacturas.porVencer} por vencer en los próximos 7 días</span>
+                    )}
+                  </span>
+                </div>
+                <Link to="/facturas" className={`btn btn-sm btn-${alertasFacturas.vencidas > 0 ? 'danger' : 'warning'} text-nowrap`}>
+                  Ver facturas <i className="bi bi-arrow-right ms-1" />
+                </Link>
+              </div>
+            )}
+
             <div className="row g-3 mb-3">
               <div className="col-sm-6 col-xl-3">
                 <StatCard titulo="Ventas de hoy" valor={formatCLP(datos.totalHoy)} subtitulo={`${datos.countHoy} venta(s)`} icono="bi-cash-stack" color="success" />

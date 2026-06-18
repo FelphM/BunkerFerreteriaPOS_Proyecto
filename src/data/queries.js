@@ -459,6 +459,19 @@ export async function getUsuarios() {
   return res.data ?? [];
 }
 
+/** Facturas de proveedores con nombre del proveedor, ordenadas por vencimiento. */
+export async function getFacturas() {
+  const res = await supabase
+    .from('facturas_proveedores')
+    .select('*, proveedores ( id, nombre )')
+    .order('fecha_vencimiento', { ascending: true });
+  throwIfError(res);
+  return (res.data ?? []).map((f) => ({
+    ...f,
+    proveedor_nombre: f.proveedores?.nombre ?? '(eliminado)',
+  }));
+}
+
 /** Ventas en espera (carritos apartados desde el POS). */
 export async function getVentasEnEspera() {
   const res = await supabase

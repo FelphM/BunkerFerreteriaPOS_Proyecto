@@ -70,11 +70,10 @@ export default function ConfiguracionPage() {
     if (!editandoUsuario) return;
     setGuardandoUsuario(true);
     try {
-      const { error } = await supabase.rpc('actualizar_usuario_admin', {
-        p_usuario_id: editandoUsuario.id,
-        p_nuevo_rol: editandoUsuario.rol,
-        p_activo: editandoUsuario.activo,
-      });
+      const { error } = await supabase
+        .from('usuarios_perfiles')
+        .update({ rol: editandoUsuario.rol, activo: editandoUsuario.activo })
+        .eq('id', editandoUsuario.id);
       if (error) throw new Error(error.message);
       await refetchUsuarios();
       setEditandoUsuario(null);

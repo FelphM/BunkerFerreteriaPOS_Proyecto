@@ -10,7 +10,7 @@
  *   - Mobil  (<768px):  oculto por defecto, se abre como panel superpuesto.
  * ---------------------------------------------------------------------------
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { supabase } from '../lib/supabaseClient';
@@ -20,6 +20,7 @@ export default function AppLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [itemsCriticos, setItemsCriticos] = useState(0);
   const [alertaCerrada, setAlertaCerrada] = useState(false);
+  const [facturasUrgentes, setFacturasUrgentes] = useState(0);
 
   useEffect(() => {
     const verificarStockBajo = async () => {
@@ -54,6 +55,41 @@ export default function AppLayout() {
     };
   }, []);
 
+  const verificarFacturas = useCallback(async () => {
+    const saved = localStorage.getItem('fp_dias_alerta');
+    const diasAlerta = saved ? Math.max(1, Math.min(90, Number(saved))) : 7;
+
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const limite = new Date(hoy); limite.setDate(limite.getDate() + diasAlerta);
+    const limiteStr = `${limite.getFullYear()}-${String(limite.getMonth() + 1).padStart(2, '0')}-${String(limite.getDate()).padStart(2, '0')}`;
+
+    const { count, error } = await supabase
+      .from('facturas_proveedores')
+      .select('*', { count: 'exact', head: true })
+      .neq('estado_pago', 'pagada')
+      .neq('estado_pago', 'anulada')
+      .not('fecha_vencimiento', 'is', null)
+      .lte('fecha_vencimiento', limiteStr);
+
+    if (!error) setFacturasUrgentes(count ?? 0);
+  }, []);
+
+  useEffect(() => {
+    verificarFacturas();
+
+    const channel = supabase
+      .channel('facturas-alertas')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'facturas_proveedores' }, verificarFacturas)
+      .subscribe();
+
+    window.addEventListener('fp:facturas-changed', verificarFacturas);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener('fp:facturas-changed', verificarFacturas);
+    };
+  }, [verificarFacturas]);
+
   return (
     <div className="fp-app d-flex vh-100 overflow-hidden">
       {/* Overlay para cerrar sidebar en movil */}
@@ -69,6 +105,7 @@ export default function AppLayout() {
         mobileOpen={mobileSidebarOpen}
         onDesktopToggle={() => setSidebarCollapsed((v) => !v)}
         onMobileClose={() => setMobileSidebarOpen(false)}
+        badges={{ '/facturas': facturasUrgentes }}
       />
 
       <main className="fp-content flex-grow-1 d-flex flex-column overflow-hidden">

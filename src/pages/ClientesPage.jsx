@@ -13,6 +13,7 @@
 import { useMemo, useState } from 'react';
 import { getClientes, getClientesDerivados } from '../data/queries';
 import { useQuery } from '../hooks/useQuery';
+import { supabase } from '../lib/supabaseClient';
 import { formatCLP, formatFecha } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
@@ -25,6 +26,21 @@ export default function ClientesPage() {
   const [busqueda, setBusqueda] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [editandoCliente, setEditandoCliente] = useState(null);
+  const [eliminando, setEliminando] = useState(null);
+
+  async function handleEliminarCliente(c) {
+    if (!window.confirm(`¿Eliminar al cliente "${c.nombre}"? Esta acción no se puede deshacer.`)) return;
+    setEliminando(c.clave);
+    try {
+      const { error } = await supabase.from('clientes').delete().eq('id', c.clave);
+      if (error) throw new Error(error.message);
+      refetch();
+    } catch (err) {
+      window.alert(`Error al eliminar: ${err.message}`);
+    } finally {
+      setEliminando(null);
+    }
+  }
 
   // Fusiona ambas fuentes: clientes registrados enriquecidos con historial,
   // más clientes del historial de ventas que no tienen perfil creado.
@@ -235,14 +251,27 @@ export default function ClientesPage() {
                       </td>
                       <td className="text-end">
                         {c.tiene_perfil && (
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-primary"
-                            title="Editar cliente"
-                            onClick={() => setEditandoCliente(c)}
-                          >
-                            <i className="bi bi-pencil" />
-                          </button>
+                          <div className="d-flex gap-1 justify-content-end">
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-primary"
+                              title="Editar cliente"
+                              onClick={() => setEditandoCliente(c)}
+                            >
+                              <i className="bi bi-pencil" />
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-danger"
+                              title="Eliminar cliente"
+                              disabled={eliminando === c.clave}
+                              onClick={() => handleEliminarCliente(c)}
+                            >
+                              {eliminando === c.clave
+                                ? <span className="spinner-border spinner-border-sm" />
+                                : <i className="bi bi-trash" />}
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>

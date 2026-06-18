@@ -18,7 +18,7 @@ const LABEL_ROL = {
   bodega: 'Bodega',
 };
 
-export default function Sidebar({ collapsed, mobileOpen, onDesktopToggle, onMobileClose }) {
+export default function Sidebar({ collapsed, mobileOpen, onDesktopToggle, onMobileClose, badges = {} }) {
   const { usuario, signOut } = useAuth();
   const { dark, toggleTheme } = useTheme();
 
@@ -81,8 +81,16 @@ export default function Sidebar({ collapsed, mobileOpen, onDesktopToggle, onMobi
                   if (window.innerWidth < 768) onMobileClose?.();
                 }}
               >
-                <i className={`bi ${item.icono} fs-5 flex-shrink-0`} />
+                <div className="position-relative flex-shrink-0">
+                  <i className={`bi ${item.icono} fs-5`} />
+                  {collapsed && badges[item.path] > 0 && <span className="fp-nav-badge-dot" />}
+                </div>
                 {!collapsed && <span className="text-nowrap">{item.label}</span>}
+                {!collapsed && badges[item.path] > 0 && (
+                  <span className="fp-nav-badge ms-auto">
+                    {badges[item.path] > 99 ? '99+' : badges[item.path]}
+                  </span>
+                )}
               </NavLink>
             </li>
           ))}

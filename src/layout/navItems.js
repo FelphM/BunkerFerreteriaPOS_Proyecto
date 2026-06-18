@@ -16,6 +16,7 @@ export const navItems = [
   { path: '/inventario', label: 'Inventario', icono: 'bi-box-seam' },
   { path: '/ventas', label: 'Ventas', icono: 'bi-graph-up-arrow' },
   { path: '/compras', label: 'Compras', icono: 'bi-bag' },
+  { path: '/facturas', label: 'Facturas', icono: 'bi-receipt' },
   { path: '/clientes', label: 'Clientes', icono: 'bi-people' },
   { path: '/proveedores', label: 'Proveedores', icono: 'bi-truck' },
   { path: '/categorias', label: 'Categorias', icono: 'bi-tags' },

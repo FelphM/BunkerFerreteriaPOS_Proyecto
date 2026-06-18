@@ -67,29 +67,23 @@ export function AuthProvider({ children }) {
   // Listener de cambios de sesion.
   // -------------------------------------------------------------------------
   useEffect(() => {
-    // Sesion actual (puede existir en localStorage desde una visita anterior).
-    supabase.auth.getSession().then(({ data: { session: sess } }) => {
-      setSession(sess);
-      cargarPerfil(sess?.user?.id).finally(() => setLoading(false));
-    });
-
-    // Futuros cambios: login, logout, refresh automatico del token.
+    // Usamos SOLO onAuthStateChange (no getSession separado) para evitar la
+    // condicion de carrera por el lock de auth de Supabase al recargar pagina.
+    // INITIAL_SESSION se dispara al montar con la sesion existente en localStorage.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, sess) => {
         setSession(sess);
-        // NO limpiamos `error` aqui para no sobreescribir errores de signIn.
-        // El error se limpia explicitamente al inicio de cada intento de signIn.
 
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          // Login exitoso: limpiamos cualquier error anterior.
+        if (event === 'INITIAL_SESSION') {
+          // Restauracion de sesion al cargar/recargar la pagina.
+          await cargarPerfil(sess?.user?.id);
+          setLoading(false);
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           setError(null);
           await cargarPerfil(sess?.user?.id);
-        }
-        if (event === 'SIGNED_OUT') {
+        } else if (event === 'SIGNED_OUT') {
           setPerfil(null);
         }
-
-        setLoading(false);
       },
     );
 

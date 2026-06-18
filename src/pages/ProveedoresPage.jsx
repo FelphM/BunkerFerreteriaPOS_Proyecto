@@ -8,6 +8,7 @@
 import { useMemo, useState } from 'react';
 import { getProveedores } from '../data/queries';
 import { useQuery } from '../hooks/useQuery';
+import { supabase } from '../lib/supabaseClient';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
 import AddProveedorModal from '../components/AddProveedorModal';
@@ -18,6 +19,21 @@ export default function ProveedoresPage() {
   const [busqueda, setBusqueda] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [editandoProveedor, setEditandoProveedor] = useState(null);
+  const [eliminando, setEliminando] = useState(null);
+
+  async function handleEliminarProveedor(p) {
+    if (!window.confirm(`¿Eliminar al proveedor "${p.nombre}"? Esta acción no se puede deshacer.`)) return;
+    setEliminando(p.id);
+    try {
+      const { error } = await supabase.from('proveedores').delete().eq('id', p.id);
+      if (error) throw new Error(error.message);
+      refetch();
+    } catch (err) {
+      window.alert(`Error al eliminar: ${err.message}`);
+    } finally {
+      setEliminando(null);
+    }
+  }
 
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -136,14 +152,27 @@ export default function ProveedoresPage() {
                         </small>
                       </td>
                       <td className="text-end">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-primary"
-                          title="Editar proveedor"
-                          onClick={() => setEditandoProveedor(p)}
-                        >
-                          <i className="bi bi-pencil" />
-                        </button>
+                        <div className="d-flex gap-1 justify-content-end">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-primary"
+                            title="Editar proveedor"
+                            onClick={() => setEditandoProveedor(p)}
+                          >
+                            <i className="bi bi-pencil" />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger"
+                            title="Eliminar proveedor"
+                            disabled={eliminando === p.id}
+                            onClick={() => handleEliminarProveedor(p)}
+                          >
+                            {eliminando === p.id
+                              ? <span className="spinner-border spinner-border-sm" />
+                              : <i className="bi bi-trash" />}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

@@ -144,6 +144,21 @@ body {
   box-shadow: 0 4px 10px rgba(232, 98, 14, 0.35);
 }
 
+/* Badge de conteo en items del sidebar (ej: facturas pendientes) */
+.fp-nav-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.2em 0.5em;
+  border-radius: 9999px;
+  min-width: 1.4em;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+
 /* Divisor dentro del nav del sidebar */
 .fp-sidebar-divider {
   border-color: rgba(255, 255, 255, 0.1);
@@ -983,4 +998,131 @@ body {
 [data-bs-theme="dark"] span.text-secondary,
 [data-bs-theme="dark"] div.text-secondary {
   color: rgba(186, 196, 214, 0.88) !important;
+}
+
+/* ===========================================================================
+ * MINI CALENDARIO — FacturasPage
+ * ======================================================================== */
+.fp-cal-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.fp-cal-mes-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.fp-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.fp-cal-dia-label {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--bs-secondary-color, #6c757d);
+  padding: 2px 0 4px;
+}
+.fp-cal-dia {
+  position: relative;
+  aspect-ratio: 1;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  transition: background 0.1s;
+  color: inherit;
+}
+.fp-cal-dia:hover {
+  background: var(--bs-gray-200, #e9ecef);
+}
+.fp-cal-vacio {
+  aspect-ratio: 1;
+}
+.fp-cal-hoy {
+  font-weight: 700;
+  color: var(--fp-accent) !important;
+  outline: 2px solid var(--fp-accent);
+  outline-offset: -2px;
+}
+.fp-cal-vencida {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+.fp-cal-proxima {
+  background: #fef9c3 !important;
+  color: #92400e !important;
+}
+.fp-cal-al-dia {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+}
+.fp-cal-sel {
+  outline: 2px solid #0d6efd;
+  outline-offset: -2px;
+}
+.fp-cal-count {
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: currentColor;
+}
+.fp-nav-badge-dot {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bs-danger);
+  border: 1.5px solid var(--fp-sidebar-bg);
+}
+.fp-cal-legend-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.fp-cal-legend-dot.fp-cal-vencida {
+  background: #fee2e2;
+  outline: 1px solid #b91c1c;
+}
+.fp-cal-legend-dot.fp-cal-proxima {
+  background: #fef9c3;
+  outline: 1px solid #d97706;
+}
+.fp-cal-legend-dot.fp-cal-al-dia {
+  background: #dcfce7;
+  outline: 1px solid #15803d;
+}
+
+/* Dark mode overrides para el calendario */
+[data-bs-theme="dark"] .fp-cal-dia:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+[data-bs-theme="dark"] .fp-cal-vencida {
+  background: rgba(220, 53, 69, 0.25) !important;
+  color: #f87171 !important;
+}
+[data-bs-theme="dark"] .fp-cal-proxima {
+  background: rgba(234, 179, 8, 0.2) !important;
+  color: #fde047 !important;
+}
+[data-bs-theme="dark"] .fp-cal-al-dia {
+  background: rgba(34, 197, 94, 0.2) !important;
+  color: #4ade80 !important;
 }
