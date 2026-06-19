@@ -15,8 +15,11 @@ import { supabase } from '../lib/supabaseClient';
 import { getVentasEnEspera, getConfigNumero } from '../data/queries';
 import { safeQty } from '../utils/format';
 import db from '../lib/offlineDB';
+import { useAuth } from '../context/useAuth';
 
 export function usePosCart() {
+  const { session } = useAuth();
+
   // -------------------------------------------------------------------------
   // ESTADO
   // -------------------------------------------------------------------------
@@ -154,6 +157,8 @@ export function usePosCart() {
     async ({ nombreCliente, rutCliente, correoCliente, metodoPago, observaciones }) => {
       if (cart.length === 0) return { success: false, error: 'Carrito vacio' };
 
+      const usuarioId = session?.user?.id ?? null;
+
       // Si no hay conexion, guardar en Dexie para sync posterior.
       if (!navigator.onLine) {
         const lineas = cart.map((item) => ({
@@ -165,7 +170,7 @@ export function usePosCart() {
           creado_en: new Date().toISOString(),
           intentos: 0,
           error: null,
-          datos: { nombreCliente, rutCliente, correoCliente, metodoPago, observaciones, lineas },
+          datos: { nombreCliente, rutCliente, correoCliente, metodoPago, observaciones, usuarioId, lineas },
         });
         clearCart();
         return { success: true, offline: true };
@@ -180,6 +185,7 @@ export function usePosCart() {
           correo_cliente: correoCliente || null,
           metodo_pago: metodoPago,
           observaciones: observaciones || null,
+          usuario_id: usuarioId,
         })
         .select()
         .single();

@@ -178,7 +178,11 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
         .select()
         .single();
 
-      if (errVar) throw new Error(errVar.message);
+      if (errVar) {
+        await supabase.from('productos').delete().eq('id', producto.id);
+        if (errVar.code === '23505') throw new Error('El código de barras ya está en uso por otra variante.');
+        throw new Error(errVar.message);
+      }
 
       // 3. Registrar el movimiento CARGA_INICIAL si hay stock inicial.
       const stockInicial = parseFloat(form.stock_inicial) || 0;

@@ -78,7 +78,7 @@ export default function NuevaFacturaModal({ show, proveedores = [], onClose, onC
         condicion_pago: form.condicion_pago,
         monto: Number(form.monto),
         observaciones: form.observaciones.trim() || null,
-        estado_pago: 'pendiente',
+        estado_pago: 'PENDIENTE',
       });
       if (err) {
         if (err.code === '23505') throw new Error('Ya existe una factura con ese número para este proveedor.');

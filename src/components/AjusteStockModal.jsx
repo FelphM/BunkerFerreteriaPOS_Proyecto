@@ -5,7 +5,8 @@
  *
  * Tipos de movimiento disponibles (según constraint de BD):
  *   INGRESO_PROVEEDOR  → suma stock (entrada de mercancía; permite elegir proveedor)
- *   CARGA_INICIAL      → suma stock (corrección/carga inicial)
+ *   AJUSTE_ENTRADA     → suma stock (ajuste positivo manual: mercadería hallada, corrección)
+ *   CARGA_INICIAL      → suma stock (carga inicial al dar de alta el producto)
  *   AJUSTE_MERMA       → resta stock (pérdida, daño, robo)
  * ---------------------------------------------------------------------------
  */
@@ -25,9 +26,9 @@ const TIPOS = [
     icono: 'bi-box-arrow-in-down',
   },
   {
-    value: 'CARGA_INICIAL',
-    label: 'Carga / corrección',
-    descripcion: 'Ajuste positivo: corrección de inventario o carga de stock',
+    value: 'AJUSTE_ENTRADA',
+    label: 'Ajuste positivo',
+    descripcion: 'Corrección al alza: mercadería hallada, error de conteo',
     signo: +1,
     color: 'primary',
     icono: 'bi-plus-circle',
@@ -39,6 +40,14 @@ const TIPOS = [
     signo: -1,
     color: 'danger',
     icono: 'bi-dash-circle',
+  },
+  {
+    value: 'CARGA_INICIAL',
+    label: 'Carga inicial',
+    descripcion: 'Solo para la primera carga de stock al crear el producto',
+    signo: +1,
+    color: 'secondary',
+    icono: 'bi-box-seam',
   },
 ];
 

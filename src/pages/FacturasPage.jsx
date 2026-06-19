@@ -39,7 +39,7 @@ function calcDias(vencStr) {
 }
 
 function estadoVisual(f, diasAlerta) {
-  if (['pagada', 'anulada'].includes(f.estado_pago)) return f.estado_pago;
+  if (['PAGADA', 'ANULADA'].includes(f.estado_pago)) return f.estado_pago.toLowerCase();
   if (!f.fecha_vencimiento) return 'al_dia';
   const d = calcDias(f.fecha_vencimiento);
   if (d < 0) return 'vencida';
@@ -63,7 +63,7 @@ function MiniCalendario({ facturas, diasAlerta, filtroDia, onFiltroDia }) {
     const mapa = new Map();
     for (const f of facturas) {
       if (!f.fecha_vencimiento) continue;
-      if (['pagada', 'anulada'].includes(f.estado_pago)) continue;
+      if (['PAGADA', 'ANULADA'].includes(f.estado_pago)) continue;
       const key = f.fecha_vencimiento;
       const ev = estadoVisual(f, diasAlerta);
       const prev = mapa.get(key);
@@ -339,14 +339,14 @@ export default function FacturasPage() {
     facturas.map((f) => ({
       ...f,
       ev: estadoVisual(f, diasAlerta),
-      diasRestantes: !['pagada', 'anulada'].includes(f.estado_pago) && f.fecha_vencimiento
+      diasRestantes: !['PAGADA', 'ANULADA'].includes(f.estado_pago) && f.fecha_vencimiento
         ? calcDias(f.fecha_vencimiento)
         : null,
     })),
   [facturas, diasAlerta]);
 
   const kpis = useMemo(() => {
-    const activas = facturasEnriquecidas.filter((f) => !['pagada', 'anulada'].includes(f.estado_pago));
+    const activas = facturasEnriquecidas.filter((f) => !['PAGADA', 'ANULADA'].includes(f.estado_pago));
     return {
       totalPendiente: activas.reduce((s, f) => s + f.monto, 0),
       countVencidas: facturasEnriquecidas.filter((f) => f.ev === 'vencida').length,
@@ -357,10 +357,10 @@ export default function FacturasPage() {
 
   const filtradas = useMemo(() => {
     let lista = facturasEnriquecidas;
-    if (filtroEstado === 'activos') lista = lista.filter((f) => !['pagada', 'anulada'].includes(f.estado_pago));
+    if (filtroEstado === 'activos') lista = lista.filter((f) => !['PAGADA', 'ANULADA'].includes(f.estado_pago));
     else if (filtroEstado === 'vencidas') lista = lista.filter((f) => f.ev === 'vencida');
     else if (filtroEstado === 'por_vencer') lista = lista.filter((f) => f.ev === 'por_vencer');
-    else if (filtroEstado === 'pagadas') lista = lista.filter((f) => f.estado_pago === 'pagada');
+    else if (filtroEstado === 'pagadas') lista = lista.filter((f) => f.estado_pago === 'PAGADA');
     if (filtroProveedor) lista = lista.filter((f) => f.proveedor_id === filtroProveedor);
     if (filtroDia) lista = lista.filter((f) => f.fecha_vencimiento === filtroDia);
     return lista;
@@ -373,7 +373,7 @@ export default function FacturasPage() {
       const fecha_pago = new Date().toISOString().slice(0, 10);
       const { error } = await supabase
         .from('facturas_proveedores')
-        .update({ estado_pago: 'pagada', fecha_pago })
+        .update({ estado_pago: 'PAGADA', fecha_pago })
         .eq('id', f.id);
       if (error) throw new Error(error.message);
       refetch();
@@ -391,7 +391,7 @@ export default function FacturasPage() {
     try {
       const { error } = await supabase
         .from('facturas_proveedores')
-        .update({ estado_pago: 'anulada' })
+        .update({ estado_pago: 'ANULADA' })
         .eq('id', f.id);
       if (error) throw new Error(error.message);
       refetch();
@@ -569,7 +569,7 @@ export default function FacturasPage() {
                         <td className="text-end">
                           {cargando === f.id
                             ? <span className="spinner-border spinner-border-sm text-secondary" />
-                            : !['pagada', 'anulada'].includes(f.estado_pago) && (
+                            : !['PAGADA', 'ANULADA'].includes(f.estado_pago) && (
                               <div className="d-flex gap-1 justify-content-end">
                                 <button type="button" className="btn btn-sm btn-outline-success"
                                   title="Marcar como pagada" onClick={() => marcarPagada(f)}>

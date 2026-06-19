@@ -29,6 +29,7 @@ async function sincronizarPendientes() {
           correo_cliente: datos.correoCliente || null,
           metodo_pago: datos.metodoPago,
           observaciones: datos.observaciones || null,
+          usuario_id: datos.usuarioId ?? null,
         })
         .select()
         .single();

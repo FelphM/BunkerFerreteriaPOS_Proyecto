@@ -66,8 +66,8 @@ export default function AppLayout() {
     const { count, error } = await supabase
       .from('facturas_proveedores')
       .select('*', { count: 'exact', head: true })
-      .neq('estado_pago', 'pagada')
-      .neq('estado_pago', 'anulada')
+      .neq('estado_pago', 'PAGADA')
+      .neq('estado_pago', 'ANULADA')
       .not('fecha_vencimiento', 'is', null)
       .lte('fecha_vencimiento', limiteStr);
 
