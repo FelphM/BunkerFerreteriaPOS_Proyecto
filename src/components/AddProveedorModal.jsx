@@ -96,6 +96,7 @@ export default function AddProveedorModal({ show, onClose, onProveedorCreado }) 
       titulo="Nuevo proveedor"
       icono="bi-truck"
       size="lg"
+      level={2}
       footer={footer}
     >
       {errorGlobal && (

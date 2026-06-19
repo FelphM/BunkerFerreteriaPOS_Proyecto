@@ -89,6 +89,18 @@ export const esMesActual = (value) => {
 };
 
 /**
+ * Formatea un valor de stock eliminando ruido decimal.
+ * Redondea a 2 decimales y quita ceros de relleno.
+ * Ej: 499.9999 → "500", 9.67 → "9.67", 29.001 → "29"
+ * @param {number|null|undefined} value
+ * @returns {string}
+ */
+export const formatStock = (value) => {
+  const n = parseFloat(Number(value ?? 0).toFixed(2));
+  return n % 1 === 0 ? String(Math.round(n)) : String(n);
+};
+
+/**
  * Traduce el stock a un "estado" visual reutilizable.
  * El umbral de stock bajo podria venir de `configuracion` en produccion.
  * @param {number} stock
@@ -101,7 +113,7 @@ export const getStockStatus = (stock, umbralBajo = 10) => {
     return { texto: 'Agotado', variante: 'danger', agotado: true };
   }
   if (stock <= umbralBajo) {
-    return { texto: `Stock: ${stock}`, variante: 'warning', agotado: false };
+    return { texto: `Stock: ${formatStock(stock)}`, variante: 'warning', agotado: false };
   }
-  return { texto: `Stock: ${stock}`, variante: 'success', agotado: false };
+  return { texto: `Stock: ${formatStock(stock)}`, variante: 'success', agotado: false };
 };

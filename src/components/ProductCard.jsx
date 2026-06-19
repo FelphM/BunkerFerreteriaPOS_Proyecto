@@ -10,8 +10,9 @@ import { formatCLP, getStockStatus } from '../utils/format';
 
 export default function ProductCard({ item, iconoCategoria, onAdd, onEdit }) {
   const stock = getStockStatus(item.stock_actual);
-  const titulo = item.tieneVariantes
-    ? `${item.nombre} ${item.variante_nombre}`
+  // Tooltip muestra nombre completo solo cuando hay variantes
+  const tooltipTitulo = item.tieneVariantes
+    ? `${item.nombre} — ${item.variante_nombre}`
     : item.nombre;
 
   return (
@@ -19,7 +20,7 @@ export default function ProductCard({ item, iconoCategoria, onAdd, onEdit }) {
       className={`fp-product-card card border-0 shadow-sm h-100 position-relative ${stock.agotado ? 'opacity-60' : ''}`}
       style={{ cursor: stock.agotado ? 'not-allowed' : 'pointer' }}
       onClick={() => !stock.agotado && onAdd(item)}
-      title={stock.agotado ? 'Producto agotado' : `Agregar ${titulo}`}
+      title={stock.agotado ? 'Producto agotado' : `Agregar ${tooltipTitulo}`}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter' && !stock.agotado) onAdd(item); }}
@@ -40,8 +41,12 @@ export default function ProductCard({ item, iconoCategoria, onAdd, onEdit }) {
         <div className="fp-product-icon text-center mb-1">
           <i className={`bi ${iconoCategoria}`} />
         </div>
-        <div className="fp-product-name fw-semibold lh-sm">{titulo}</div>
-        <small className="text-secondary">{item.codigo}</small>
+        {/* Nombre del producto siempre en el título */}
+        <div className="fp-product-name fw-semibold lh-sm">{item.nombre}</div>
+        {/* Variante como subtítulo separado cuando hay múltiples */}
+        {item.tieneVariantes
+          ? <small className="text-primary fw-semibold">{item.variante_nombre}</small>
+          : <small className="text-secondary">{item.codigo}</small>}
         <div className="mt-auto">
           <div className="fp-product-price fw-bold">{formatCLP(item.precio_venta)}</div>
           <small className="text-secondary">/ {item.unidad_venta}</small>

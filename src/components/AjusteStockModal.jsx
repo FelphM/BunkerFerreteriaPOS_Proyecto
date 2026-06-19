@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { getProveedores } from '../data/queries';
+import { formatStock } from '../utils/format';
 import Modal from './ui/Modal';
 import AddProveedorModal from './AddProveedorModal';
 
@@ -159,6 +160,8 @@ export default function AjusteStockModal({ variante, onClose, onAjustado }) {
     </>
   );
 
+  const esDerived = variante?.es_derivada ?? false;
+
   return (
     <>
       <Modal
@@ -166,7 +169,9 @@ export default function AjusteStockModal({ variante, onClose, onAjustado }) {
         onClose={handleClose}
         titulo={variante ? `Ajustar stock — ${variante.producto_nombre}` : ''}
         icono="bi-boxes"
-        footer={footer}
+        footer={esDerived
+          ? <button type="button" className="btn btn-secondary" onClick={handleClose}>Cerrar</button>
+          : footer}
       >
         {variante && (
           <>
@@ -184,13 +189,35 @@ export default function AjusteStockModal({ variante, onClose, onAjustado }) {
               <div className="text-end">
                 <div className="text-secondary small">Stock actual</div>
                 <div className="fw-bold fs-5">
-                  {variante.stock_actual}{' '}
+                  {formatStock(variante.stock_actual)}{' '}
                   <small className="fw-normal text-secondary">{variante.unidad_venta}</small>
                 </div>
               </div>
             </div>
 
-            {/* Tipo de movimiento */}
+            {/* Bloqueo para variantes derivadas */}
+            {esDerived && (
+              <div className="alert alert-info d-flex gap-3 align-items-start">
+                <i className="bi bi-link-45deg fs-4 flex-shrink-0" />
+                <div>
+                  <div className="fw-semibold mb-1">Variante con trazabilidad cruzada</div>
+                  <p className="mb-2 small">
+                    Esta variante comparte stock con{' '}
+                    <strong>&ldquo;{variante.variante_maestra_nombre}&rdquo;</strong>.
+                    El stock que ves ({formatStock(variante.stock_actual)} {variante.unidad_venta}) se calcula
+                    automáticamente a partir del stock de la variante maestra.
+                  </p>
+                  <p className="mb-0 small">
+                    Para ajustar el stock, hazlo desde la variante{' '}
+                    <strong>{variante.variante_maestra_nombre}</strong> usando el botón{' '}
+                    <i className="bi bi-boxes" /> en la fila correspondiente.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Formulario — solo para variantes maestras */}
+            {!esDerived && <>
             <div className="mb-3">
               <label className="form-label fw-semibold">Tipo de movimiento</label>
               <div className="d-flex flex-column gap-2">
@@ -294,7 +321,7 @@ export default function AjusteStockModal({ variante, onClose, onAjustado }) {
               >
                 <span className="fw-semibold">Stock resultante</span>
                 <span className={`fw-bold fs-5 ${stockResultante < 0 ? 'text-danger' : 'text-success'}`}>
-                  {stockResultante} {variante.unidad_venta}
+                  {formatStock(stockResultante)} {variante.unidad_venta}
                   {stockResultante < 0 && (
                     <small className="text-danger ms-2 fw-normal">(negativo)</small>
                   )}
@@ -328,6 +355,7 @@ export default function AjusteStockModal({ variante, onClose, onAjustado }) {
                 <span>{error}</span>
               </div>
             )}
+            </>}
           </>
         )}
       </Modal>

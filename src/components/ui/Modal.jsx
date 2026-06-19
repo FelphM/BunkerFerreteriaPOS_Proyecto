@@ -26,6 +26,7 @@ export default function Modal({
   size,
   children,
   footer,
+  level = 1,
 }) {
   // Cierre con ESC + bloqueo del scroll del body mientras esta abierto.
   useEffect(() => {
@@ -46,6 +47,9 @@ export default function Modal({
   if (!show) return null;
 
   const sizeClass = size ? `modal-${size}` : '';
+  // Cada nivel sube 10 puntos: nivel 1 → 1050/1055, nivel 2 → 1060/1065, etc.
+  const backdropZ = 1050 + (level - 1) * 10;
+  const modalZ    = backdropZ + 5;
 
   return (
     <>
@@ -54,13 +58,12 @@ export default function Modal({
         tabIndex="-1"
         role="dialog"
         aria-modal="true"
+        style={{ zIndex: modalZ, overflowY: 'auto' }}
         onMouseDown={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
       >
-        <div
-          className={`modal-dialog modal-dialog-centered modal-dialog-scrollable ${sizeClass}`}
-        >
+        <div className={`modal-dialog ${sizeClass}`}>
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">
@@ -74,12 +77,15 @@ export default function Modal({
                 onClick={onClose}
               />
             </div>
-            <div className="modal-body">{children}</div>
+            {/* max-height calculado: 100vh − header(~3.5rem) − footer(~4.5rem) − márgenes(~3.5rem) */}
+            <div className="modal-body" style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 12rem)' }}>
+              {children}
+            </div>
             {footer && <div className="modal-footer">{footer}</div>}
           </div>
         </div>
       </div>
-      <div className="modal-backdrop fade show" />
+      <div className="modal-backdrop fade show" style={{ zIndex: backdropZ }} />
     </>
   );
 }

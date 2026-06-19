@@ -116,6 +116,8 @@ export async function getVariantesInventario() {
       stock_actual,
       stock_minimo,
       actualizado_en,
+      variante_ref_id,
+      factor_conversion,
       productos (
         id,
         nombre,
@@ -130,8 +132,23 @@ export async function getVariantesInventario() {
     .order('actualizado_en', { ascending: false });
   throwIfError(res);
 
-  return (res.data ?? []).map((v) => {
+  const rows = res.data ?? [];
+
+  // Lookup de stock real por id — evita self-join que PostgREST no resuelve bien
+  const stockById = Object.fromEntries(rows.map((v) => [v.id, v.stock_actual ?? 0]));
+  const varianteById = Object.fromEntries(rows.map((v) => [v.id, v]));
+
+  return rows.map((v) => {
     const prod = v.productos ?? {};
+    const esDerived = !!v.variante_ref_id;
+    const maestra = esDerived ? varianteById[v.variante_ref_id] : null;
+
+    // Stock efectivo: derivadas usan stock_actual de la maestra × factor.
+    // toFixed(2) elimina ruido float64 y errores de redondeo del trigger (ej: 29.001 → 29).
+    const stockEfectivo = esDerived
+      ? parseFloat(((stockById[v.variante_ref_id] ?? 0) * (v.factor_conversion ?? 1)).toFixed(2))
+      : (v.stock_actual ?? 0);
+
     return {
       // Variante
       id: v.id,
@@ -143,9 +160,17 @@ export async function getVariantesInventario() {
       precio_compra: v.precio_compra,
       margen_ganancia: v.margen_ganancia,
       precio_venta: v.precio_venta,
-      stock_actual: v.stock_actual,
+      stock_actual: stockEfectivo,
+      stock_actual_raw: v.stock_actual ?? 0,
       stock_minimo: v.stock_minimo,
       actualizado_en: v.actualizado_en,
+      // Trazabilidad cruzada
+      es_derivada: esDerived,
+      variante_ref_id: v.variante_ref_id ?? null,
+      factor_conversion: v.factor_conversion ?? null,
+      variante_maestra_id: maestra?.id ?? null,
+      variante_maestra_nombre: maestra?.variante_nombre ?? null,
+      variante_maestra_unidad: maestra?.unidad_venta ?? null,
       // Producto padre
       producto_nombre: prod.nombre ?? '(eliminado)',
       codigo_interno: prod.codigo_interno ?? '',
@@ -154,9 +179,9 @@ export async function getVariantesInventario() {
       categoria_nombre: prod.categorias?.nombre ?? 'Sin categoria',
       proveedor_id: prod.proveedor_id ?? null,
       proveedor_nombre: prod.proveedores?.nombre ?? 'Sin proveedor',
-      // Calculos UI
-      valor_stock: (v.stock_actual ?? 0) * (v.precio_compra ?? 0),
-      tieneVariantes: false, // se calcula abajo
+      // Calculos UI — derivadas no suman al valor total para evitar doble conteo
+      valor_stock: esDerived ? 0 : (v.stock_actual ?? 0) * (v.precio_compra ?? 0),
+      tieneVariantes: false,
     };
   });
 }

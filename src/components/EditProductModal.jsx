@@ -16,6 +16,7 @@ import { getCategorias, getProveedores } from '../data/queries';
 import { formatCLP } from '../utils/format';
 import Modal from './ui/Modal';
 import AddProveedorModal from './AddProveedorModal';
+import AddVarianteModal from './AddVarianteModal';
 
 const UNIDADES = ['unidad', 'pza', 'metro', 'kg', 'galon', 'saco', 'bolsa', 'set', 'litro', 'caja'];
 
@@ -36,6 +37,10 @@ export default function EditProductModal({ item, onClose, onGuardado }) {
 
   // Añadir proveedor via modal
   const [showNuevoProv, setShowNuevoProv] = useState(false);
+
+  // Agregar variante al producto
+  const [variantesAll, setVariantesAll] = useState([]);
+  const [showAddVariante, setShowAddVariante] = useState(false);
 
   const [prod, setProd] = useState({
     nombre: '', descripcion: '', categoria_id: '', proveedor_id: '', codigo_interno: '',
@@ -65,12 +70,17 @@ export default function EditProductModal({ item, onClose, onGuardado }) {
       supabase.from('producto_variantes').select('*').eq('id', item.id).single(),
       getCategorias(),
       getProveedores(),
+      supabase.from('producto_variantes')
+        .select('id, variante_nombre, unidad_venta, variante_ref_id')
+        .eq('producto_id', item.id_producto)
+        .eq('activo', true),
     ])
-      .then(([{ data: p, error: eP }, { data: v, error: eV }, cats, provs]) => {
+      .then(([{ data: p, error: eP }, { data: v, error: eV }, cats, provs, { data: vars }]) => {
         if (eP) throw new Error(eP.message);
         if (eV) throw new Error(eV.message);
         setCategorias(cats);
         setProveedores(provs);
+        setVariantesAll(vars ?? []);
         setProd({
           nombre:        p.nombre         ?? '',
           descripcion:   p.descripcion    ?? '',
@@ -157,6 +167,15 @@ export default function EditProductModal({ item, onClose, onGuardado }) {
     <>
       <button type="button" className="btn btn-secondary" onClick={onClose} disabled={guardando}>
         Cancelar
+      </button>
+      <button
+        type="button"
+        className="btn btn-outline-primary"
+        onClick={() => setShowAddVariante(true)}
+        disabled={guardando || cargando}
+        title="Agregar otra variante a este producto (ej: venta por unidad y por caja)"
+      >
+        <i className="bi bi-upc me-1" />Agregar variante
       </button>
       <button
         type="button"
@@ -338,6 +357,17 @@ export default function EditProductModal({ item, onClose, onGuardado }) {
           const provs = await getProveedores();
           setProveedores(provs);
           if (prov?.id) setProd((p) => ({ ...p, proveedor_id: prov.id }));
+        }}
+      />
+
+      <AddVarianteModal
+        productoId={showAddVariante ? item?.id_producto : null}
+        productoNombre={prod.nombre}
+        variantesExistentes={variantesAll}
+        onClose={() => setShowAddVariante(false)}
+        onCreada={() => {
+          setShowAddVariante(false);
+          onGuardado?.();
         }}
       />
     </>
