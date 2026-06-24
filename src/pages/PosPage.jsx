@@ -27,6 +27,7 @@ import { guardarCotizacion } from '../components/CotizacionesModal';
 import BajoStockModal from '../components/BajoStockModal';
 import CotizarPreviewModal from '../components/CotizarPreviewModal';
 import EditProductModal from '../components/EditProductModal';
+import TicketVentaModal from '../components/TicketVentaModal';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 export default function PosPage() {
@@ -77,6 +78,7 @@ export default function PosPage() {
   const [productosBajoStock, setProductosBajoStock] = useState([]);
   const [cotizacionPreview, setCotizacionPreview] = useState(null);
   const [editando, setEditando] = useState(null); // item del POS a editar
+  const [ticketData, setTicketData] = useState(null); // ticket tras venta exitosa
   const { isOnline, pendingCount, syncing, sincronizar, refreshPendingCount } = useOnlineStatus();
   const [errorVenta, setErrorVenta] = useState(null);
 
@@ -134,8 +136,15 @@ export default function PosPage() {
     if (!hayItems) return;
     setErrorVenta(null);
 
+    // Capturar snapshot ANTES de que finalizarVenta limpie el carrito
+    const cartSnapshot = [...cart];
+    const totalsSnapshot = { ...totals };
+    const nombreClienteSnapshot = cliente.trim() || 'Cliente General';
+    const montoRecibidoSnapshot = montoRecibido;
+    const metodoPagoSnapshot = metodoPago;
+
     const result = await finalizarVenta({
-      nombreCliente: cliente.trim() || 'Cliente General',
+      nombreCliente: nombreClienteSnapshot,
       rutCliente: null,
       correoCliente: null,
       metodoPago,
@@ -143,16 +152,21 @@ export default function PosPage() {
     });
 
     if (result.success) {
-      if (result.offline) {
-        window.alert(`Venta guardada localmente (sin conexion).\nSe sincronizara automaticamente al recuperar la red.`);
-      } else {
-        window.alert(
-          `Venta #${result.venta?.numero_venta ?? ''} registrada\n` +
-          `Total: ${formatCLP(totals.total)}\nPago: ${metodoPago}`,
-        );
-      }
       refreshPendingCount();
       resetCheckoutForm();
+      if (result.offline) {
+        window.alert('Venta guardada localmente (sin conexion).\nSe sincronizara automaticamente al recuperar la red.');
+      } else {
+        setTicketData({
+          venta: result.venta,
+          items: cartSnapshot,
+          totals: totalsSnapshot,
+          metodoPago: metodoPagoSnapshot,
+          montoRecibido: montoRecibidoSnapshot,
+          ivaPct,
+          nombreCliente: nombreClienteSnapshot,
+        });
+      }
     } else {
       setErrorVenta(result.error ?? 'Error al procesar la venta.');
     }
@@ -324,6 +338,12 @@ export default function PosPage() {
         show={showBajoStock}
         onClose={() => setShowBajoStock(false)}
         productos={productosBajoStock}
+      />
+
+      {/* ================== MODAL: TICKET DE VENTA ===================== */}
+      <TicketVentaModal
+        ticketData={ticketData}
+        onClose={() => setTicketData(null)}
       />
     </div>
   );

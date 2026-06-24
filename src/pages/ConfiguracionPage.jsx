@@ -33,6 +33,7 @@ export default function ConfiguracionPage() {
   const [showAddUser, setShowAddUser] = useState(false);
   const [editandoUsuario, setEditandoUsuario] = useState(null); // { id, rol, activo }
   const [guardandoUsuario, setGuardandoUsuario] = useState(false);
+  const [errorUsuario, setErrorUsuario] = useState(null);
 
   // Sincroniza el estado local cuando se cargan los datos
   useEffect(() => {
@@ -69,16 +70,29 @@ export default function ConfiguracionPage() {
   async function handleGuardarUsuario() {
     if (!editandoUsuario) return;
     setGuardandoUsuario(true);
+    setErrorUsuario(null);
     try {
-      const { error } = await supabase
-        .from('usuarios_perfiles')
-        .update({ rol: editandoUsuario.rol, activo: editandoUsuario.activo })
-        .eq('id', editandoUsuario.id);
-      if (error) throw new Error(error.message);
+      // Intenta primero via RPC con SECURITY DEFINER (evita restricciones RLS).
+      // Si la funcion no existe en tu BD, ejecuta el SQL de la seccion de ayuda.
+      const { error: rpcError } = await supabase.rpc('actualizar_usuario_admin', {
+        p_id:     editandoUsuario.id,
+        p_rol:    editandoUsuario.rol,
+        p_activo: editandoUsuario.activo,
+      });
+
+      if (rpcError) {
+        // Fallback: UPDATE directo (funciona si hay politica RLS para admins)
+        const { error } = await supabase
+          .from('usuarios_perfiles')
+          .update({ rol: editandoUsuario.rol, activo: editandoUsuario.activo })
+          .eq('id', editandoUsuario.id);
+        if (error) throw new Error(error.message);
+      }
+
       await refetchUsuarios();
       setEditandoUsuario(null);
     } catch (err) {
-      window.alert(`Error: ${err.message}`);
+      setErrorUsuario(err.message);
     } finally {
       setGuardandoUsuario(false);
     }
@@ -222,7 +236,7 @@ export default function ConfiguracionPage() {
           className="modal fade show d-block"
           role="dialog"
           aria-modal="true"
-          onMouseDown={(e) => { if (e.target === e.currentTarget) setEditandoUsuario(null); }}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) { setEditandoUsuario(null); setErrorUsuario(null); } }}
         >
           <div className="modal-dialog modal-dialog-centered modal-sm">
             <div className="modal-content">
@@ -231,10 +245,20 @@ export default function ConfiguracionPage() {
                   <i className="bi bi-person-gear me-2 text-warning" />
                   Editar usuario
                 </h5>
-                <button type="button" className="btn-close" onClick={() => setEditandoUsuario(null)} />
+                <button type="button" className="btn-close" onClick={() => { setEditandoUsuario(null); setErrorUsuario(null); }} />
               </div>
               <div className="modal-body">
                 <p className="fw-semibold mb-3">{editandoUsuario.nombre}</p>
+                {errorUsuario && (
+                  <div className="alert alert-danger py-2 small mb-3">
+                    <i className="bi bi-exclamation-triangle me-2" />{errorUsuario}
+                    {errorUsuario.includes('function') || errorUsuario.includes('does not exist') ? (
+                      <div className="mt-2 text-secondary" style={{ fontSize: '0.8rem' }}>
+                        Ejecuta la función <code>actualizar_usuario_admin</code> en el SQL Editor de Supabase. Consultá las instrucciones de configuración.
+                      </div>
+                    ) : null}
+                  </div>
+                )}
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Rol</label>
                   <select
@@ -260,7 +284,7 @@ export default function ConfiguracionPage() {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary btn-sm"
-                  onClick={() => setEditandoUsuario(null)} disabled={guardandoUsuario}>
+                  onClick={() => { setEditandoUsuario(null); setErrorUsuario(null); }} disabled={guardandoUsuario}>
                   Cancelar
                 </button>
                 <button type="button" className="btn fp-btn-accent btn-sm"
