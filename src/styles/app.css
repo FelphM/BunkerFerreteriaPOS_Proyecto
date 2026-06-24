@@ -1229,6 +1229,12 @@ body {
  * IMPRESION — solo muestra el area del ticket
  * ======================================================================== */
 @media print {
+  /* Suprimir encabezados y pie de pagina del navegador (titulo, URL, fecha) */
+  @page {
+    margin: 6mm;
+    size: 80mm auto;
+  }
+
   /* Ocultar todo */
   body * { visibility: hidden !important; }
 
@@ -1241,15 +1247,15 @@ body {
   .fp-ticket-print {
     position: fixed !important;
     inset: 0 !important;
-    padding: 12px !important;
+    padding: 8px !important;
     font-family: 'Courier New', Courier, monospace !important;
-    font-size: 12px !important;
+    font-size: 11px !important;
     color: #000 !important;
     background: #fff !important;
   }
 
   .fp-ticket-paper {
-    font-size: 12px !important;
+    font-size: 11px !important;
     color: #000 !important;
   }
 

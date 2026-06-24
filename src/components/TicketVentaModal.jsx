@@ -34,7 +34,12 @@ export default function TicketVentaModal({ ticketData, onClose }) {
 
   return (
     <>
-      <div className="modal fade show d-block fp-ticket-modal" role="dialog" aria-modal="true">
+      <div
+        className="modal fade show d-block fp-ticket-modal"
+        role="dialog"
+        aria-modal="true"
+        onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
         <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable" style={{ maxWidth: 420 }}>
           <div className="modal-content">
 
@@ -175,7 +180,7 @@ export default function TicketVentaModal({ ticketData, onClose }) {
                 className="btn fp-btn-accent"
                 onClick={onClose}
               >
-                <i className="bi bi-arrow-repeat me-1" />Nueva venta
+                <i className="bi bi-check-lg me-1" />Aceptar
               </button>
             </div>
 

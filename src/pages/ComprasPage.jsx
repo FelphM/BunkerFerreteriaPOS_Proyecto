@@ -4,30 +4,34 @@
  * Ordenes de compra a proveedores: listado con filtro por estado y proveedor,
  * indicadores y modal con el detalle de cada compra.
  *
- * Estados (segun esquema): BORRADOR, CONFIRMADA, ANULADA.
+ * Estados (segun esquema): PENDIENTE (DEFAULT), CONFIRMADA, ANULADA.
  * ---------------------------------------------------------------------------
  */
 import { useMemo, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 import { getCompras, getDetalleCompra } from '../data/queries';
 import { useQuery } from '../hooks/useQuery';
 import { formatCLP, formatFechaHora } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
 import Modal from '../components/ui/Modal';
+import AddCompraModal from '../components/AddCompraModal';
 
 // Color del badge segun estado de la compra.
 const COLOR_ESTADO = {
-  BORRADOR: 'secondary',
+  PENDIENTE: 'warning',
   CONFIRMADA: 'success',
   ANULADA: 'danger',
 };
 
 export default function ComprasPage() {
-  const { data: compras = [] } = useQuery(getCompras);
+  const { data: compras = [], refetch: refetchCompras } = useQuery(getCompras);
 
   const [busqueda, setBusqueda] = useState('');
   const [estado, setEstado] = useState('');
   const [compraSel, setCompraSel] = useState(null);
+  const [showNuevaCompra, setShowNuevaCompra] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
 
   const filtradas = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -46,7 +50,7 @@ export default function ComprasPage() {
     return {
       total: compras.length,
       confirmadas: confirmadas.length,
-      borradores: compras.filter((c) => c.estado === 'BORRADOR').length,
+      pendientes: compras.filter((c) => c.estado === 'PENDIENTE').length,
       montoConfirmado: confirmadas.reduce((s, c) => s + c.total, 0),
     };
   }, [compras]);
@@ -56,13 +60,38 @@ export default function ComprasPage() {
     [compraSel?.id],
   );
 
+  async function handleConfirmarCompra() {
+    if (!compraSel) return;
+    setConfirmando(true);
+    const { error } = await supabase
+      .from('compras')
+      .update({ estado: 'CONFIRMADA' })
+      .eq('id', compraSel.id);
+    if (error) {
+      window.alert(`Error al confirmar: ${error.message}`);
+      setConfirmando(false);
+      return;
+    }
+    await refetchCompras();
+    setCompraSel(null);
+    setConfirmando(false);
+  }
+
   return (
     <>
       <PageHeader
         titulo="Compras"
         icono="bi-bag"
         descripcion={`${compras.length} ordenes de compra`}
-      />
+      >
+        <button
+          type="button"
+          className="btn fp-btn-accent"
+          onClick={() => setShowNuevaCompra(true)}
+        >
+          <i className="bi bi-bag-plus me-1" />Nueva compra
+        </button>
+      </PageHeader>
 
       <div className="fp-page-body">
         {/* KPIs */}
@@ -85,10 +114,10 @@ export default function ComprasPage() {
           </div>
           <div className="col-sm-6 col-xl-3">
             <StatCard
-              titulo="Borradores"
-              valor={kpis.borradores}
-              icono="bi-pencil-square"
-              color="secondary"
+              titulo="Pendientes"
+              valor={kpis.pendientes}
+              icono="bi-clock"
+              color="warning"
             />
           </div>
           <div className="col-sm-6 col-xl-3">
@@ -122,7 +151,7 @@ export default function ComprasPage() {
               onChange={(e) => setEstado(e.target.value)}
             >
               <option value="">Todos los estados</option>
-              <option value="BORRADOR">Borrador</option>
+              <option value="PENDIENTE">Pendiente</option>
               <option value="CONFIRMADA">Confirmada</option>
               <option value="ANULADA">Anulada</option>
             </select>
@@ -189,6 +218,13 @@ export default function ComprasPage() {
         </div>
       </div>
 
+      {/* Modal: nueva compra */}
+      <AddCompraModal
+        show={showNuevaCompra}
+        onClose={() => setShowNuevaCompra(false)}
+        onCompraCreada={() => { setShowNuevaCompra(false); refetchCompras(); }}
+      />
+
       {/* Modal: detalle de compra */}
       <Modal
         show={compraSel !== null}
@@ -197,13 +233,28 @@ export default function ComprasPage() {
         icono="bi-bag"
         size="lg"
         footer={
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
-            onClick={() => setCompraSel(null)}
-          >
-            Cerrar
-          </button>
+          <div className="d-flex gap-2 w-100 justify-content-between">
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={() => setCompraSel(null)}
+              disabled={confirmando}
+            >
+              Cerrar
+            </button>
+            {compraSel?.estado === 'PENDIENTE' && (
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={handleConfirmarCompra}
+                disabled={confirmando}
+              >
+                {confirmando
+                  ? <><span className="spinner-border spinner-border-sm me-2" />Confirmando...</>
+                  : <><i className="bi bi-check-circle me-1" />Confirmar compra</>}
+              </button>
+            )}
+          </div>
         }
       >
         {compraSel && (
