@@ -81,6 +81,12 @@ export default function PosPage() {
   const [ticketData, setTicketData] = useState(null); // ticket tras venta exitosa
   const { isOnline, pendingCount, syncing, sincronizar, refreshPendingCount } = useOnlineStatus();
   const [errorVenta, setErrorVenta] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  function showToast(msg) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }
 
   const searchInputRef = useRef(null);
   const hayItems = cart.length > 0;
@@ -180,7 +186,10 @@ export default function PosPage() {
     );
     if (nombre === null) return;
     const ok = await pauseSale(nombre);
-    if (ok) resetCheckoutForm();
+    if (ok) {
+      resetCheckoutForm();
+      showToast('Venta apartada con éxito');
+    }
   };
 
   /** COTIZAR: abre preview para confirmar antes de guardar. */
@@ -206,6 +215,7 @@ export default function PosPage() {
   const handleConfirmarCotizacion = () => {
     if (cotizacionPreview) guardarCotizacion(cotizacionPreview);
     setCotizacionPreview(null);
+    showToast('Cotización creada con éxito');
   };
 
   const handleRecoverSale = async (esperaId) => {
@@ -242,6 +252,7 @@ export default function PosPage() {
         onOpenHeld={() => setShowHeldModal(true)}
         onOpenBajoStock={() => setShowBajoStock(true)}
         bajoStockCount={productosBajoStock.length}
+        heldSalesCount={heldSales.length}
         isOnline={isOnline}
         pendingCount={pendingCount}
         syncing={syncing}
@@ -345,6 +356,27 @@ export default function PosPage() {
         ticketData={ticketData}
         onClose={() => setTicketData(null)}
       />
+
+      {/* ======================== TOAST ================================= */}
+      {toast && (
+        <div
+          className="position-fixed bottom-0 end-0 p-3"
+          style={{ zIndex: 9999 }}
+        >
+          <div className="toast show align-items-center text-white bg-success border-0 shadow">
+            <div className="d-flex">
+              <div className="toast-body fw-semibold">
+                <i className="bi bi-check-circle me-2" />{toast}
+              </div>
+              <button
+                type="button"
+                className="btn-close btn-close-white me-2 m-auto"
+                onClick={() => setToast(null)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

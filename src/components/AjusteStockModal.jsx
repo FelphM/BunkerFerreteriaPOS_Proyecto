@@ -42,14 +42,6 @@ const TIPOS = [
     color: 'danger',
     icono: 'bi-dash-circle',
   },
-  {
-    value: 'CARGA_INICIAL',
-    label: 'Carga inicial',
-    descripcion: 'Solo para la primera carga de stock al crear el producto',
-    signo: +1,
-    color: 'secondary',
-    icono: 'bi-box-seam',
-  },
 ];
 
 const FORM_VACIO = { tipo: 'INGRESO_PROVEEDOR', cantidad: '', observaciones: '' };

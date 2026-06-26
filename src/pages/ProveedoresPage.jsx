@@ -26,7 +26,18 @@ export default function ProveedoresPage() {
     setEliminando(p.id);
     try {
       const { error } = await supabase.from('proveedores').delete().eq('id', p.id);
-      if (error) throw new Error(error.message);
+      if (error) {
+        if (error.code === '23503') {
+          window.alert(
+            `No se puede eliminar "${p.nombre}" porque tiene compras u otros registros asociados.\n\n` +
+            `Para eliminarlo, primero eliminá las compras y facturas vinculadas a este proveedor, ` +
+            `o reasignálas a otro proveedor.`,
+          );
+        } else {
+          throw new Error(error.message);
+        }
+        return;
+      }
       refetch();
     } catch (err) {
       window.alert(`Error al eliminar: ${err.message}`);

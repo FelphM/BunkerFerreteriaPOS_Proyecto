@@ -11,7 +11,7 @@ import { formatLongDate } from '../utils/format';
 const PosTopBar = forwardRef(function PosTopBar(
   {
     query, onQueryChange, onOpenAddProduct, onOpenHeld,
-    onOpenBajoStock, bajoStockCount = 0,
+    onOpenBajoStock, bajoStockCount = 0, heldSalesCount = 0,
     isOnline = true, pendingCount = 0, syncing = false, onSincronizar,
   },
   inputRef,
@@ -83,11 +83,17 @@ const PosTopBar = forwardRef(function PosTopBar(
       {/* Ventas Apartadas */}
       <button
         type="button"
-        className="btn btn-outline-secondary btn-lg"
+        className={`btn btn-lg position-relative ${heldSalesCount > 0 ? 'btn-outline-warning' : 'btn-outline-secondary'}`}
         title="Ventas apartadas"
         onClick={onOpenHeld}
       >
         <i className="bi bi-clock-history" />
+        {heldSalesCount > 0 && (
+          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+            {heldSalesCount > 99 ? '99+' : heldSalesCount}
+            <span className="visually-hidden">ventas apartadas</span>
+          </span>
+        )}
       </button>
 
       {/* Campana bajo stock */}

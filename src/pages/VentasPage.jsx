@@ -32,6 +32,49 @@ export default function VentasPage() {
   const [metodo, setMetodo] = useState('');
   const [ventaSel, setVentaSel] = useState(null);
 
+  function handlePrintVenta() {
+    if (!ventaSel || detalle.length === 0) return;
+    const fecha = formatFechaHora(ventaSel.creado_en);
+    const lineas = detalle.map((d) => `
+      <tr>
+        <td>${d.producto_nombre}${d.variante_nombre ? ` <small style="color:#666">${d.variante_nombre}</small>` : ''}</td>
+        <td style="text-align:right">${d.cantidad} ${d.unidad_venta}</td>
+        <td style="text-align:right">${formatCLP(d.precio_unitario)}</td>
+        <td style="text-align:right"><strong>${formatCLP(d.subtotal)}</strong></td>
+      </tr>`).join('');
+    const w = window.open('', '_blank', 'width=700,height=800');
+    w.document.write(`<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/>
+<title>Venta #${ventaSel.numero_venta}</title>
+<style>
+  body{font-family:Arial,sans-serif;font-size:13px;padding:24px;color:#111}
+  h2{margin-bottom:6px}
+  .meta{color:#555;margin-bottom:16px;line-height:1.8}
+  table{width:100%;border-collapse:collapse;margin-top:16px}
+  th{background:#f0f0f0;padding:7px 10px;text-align:left;border-bottom:2px solid #ccc}
+  td{padding:7px 10px;border-bottom:1px solid #eee;vertical-align:top}
+  .total-row td{font-weight:bold;border-top:2px solid #ccc;font-size:14px}
+  @media print{body{padding:0}}
+</style></head><body>
+<h2>Venta #${String(ventaSel.numero_venta).padStart(6, '0')}</h2>
+<div class="meta">
+  <div><strong>Cliente:</strong> ${ventaSel.nombre_cliente}</div>
+  ${ventaSel.rut_cliente ? `<div><strong>RUT:</strong> ${ventaSel.rut_cliente}</div>` : ''}
+  <div><strong>Fecha:</strong> ${fecha}</div>
+  <div><strong>Método de pago:</strong> ${ventaSel.metodo_pago}</div>
+  ${ventaSel.observaciones ? `<div><strong>Observaciones:</strong> ${ventaSel.observaciones}</div>` : ''}
+</div>
+<table>
+  <thead><tr><th>Producto</th><th style="text-align:right">Cantidad</th><th style="text-align:right">P. Unitario</th><th style="text-align:right">Subtotal</th></tr></thead>
+  <tbody>${lineas}</tbody>
+  <tfoot><tr class="total-row"><td colspan="3" style="text-align:right">TOTAL</td><td style="text-align:right">${formatCLP(ventaSel.total)}</td></tr></tfoot>
+</table>
+</body></html>`);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); w.close(); }, 250);
+  }
+
   // Detalle de la venta abierta en el modal (DEBE ir despues de ventaSel).
   const { data: detalle = [] } = useQuery(
     () => ventaSel ? getDetalleVenta(ventaSel.id) : Promise.resolve([]),
@@ -214,13 +257,23 @@ export default function VentasPage() {
         icono="bi-receipt"
         size="lg"
         footer={
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
-            onClick={() => setVentaSel(null)}
-          >
-            Cerrar
-          </button>
+          <div className="d-flex gap-2 w-100 justify-content-between">
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={() => setVentaSel(null)}
+            >
+              Cerrar
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={handlePrintVenta}
+              disabled={detalle.length === 0}
+            >
+              <i className="bi bi-printer me-1" />Imprimir
+            </button>
+          </div>
         }
       >
         {ventaSel && (
