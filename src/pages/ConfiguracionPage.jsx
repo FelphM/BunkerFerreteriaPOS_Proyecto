@@ -1,11 +1,11 @@
 /**
  * ConfiguracionPage.jsx
  * ---------------------------------------------------------------------------
- * Configuracion del sistema:
- *   - Parametros generales editables (tabla `configuracion`).
+ * Configuración del sistema:
+ *   - Parámetros generales editables (tabla `configuracion`).
  *   - Usuarios y roles (tabla `usuarios_perfiles`).
  *
- * REQUISITO RLS: para guardar parametros, ejecutar en Supabase SQL Editor:
+ * REQUISITO RLS: para guardar parámetros, ejecutar en Supabase SQL Editor:
  *   CREATE POLICY configuracion_update ON configuracion
  *     FOR UPDATE USING (auth.role() = 'authenticated')
  *     WITH CHECK (auth.role() = 'authenticated');
@@ -55,7 +55,18 @@ export default function ConfiguracionPage() {
             .from('configuracion')
             .update({ valor: valores[c.clave] })
             .eq('clave', c.clave)
-            .then(({ error }) => { if (error) throw new Error(`${c.clave}: ${error.message}`); }),
+            .select()
+            .then(({ data, error }) => {
+              if (error) throw new Error(`${c.clave}: ${error.message}`);
+              // PostgREST no reporta error si RLS bloquea el UPDATE: devuelve
+              // éxito con 0 filas afectadas. Lo detectamos a mano.
+              if (!data || data.length === 0) {
+                throw new Error(
+                  `No se pudo guardar "${c.clave}": falta la política RLS de UPDATE en la tabla ` +
+                  `configuracion (ver comentario al inicio de ConfiguracionPage.jsx).`,
+                );
+              }
+            }),
         ),
       );
       await refetchConfig();
@@ -72,8 +83,8 @@ export default function ConfiguracionPage() {
     setGuardandoUsuario(true);
     setErrorUsuario(null);
     try {
-      // Intenta primero via RPC con SECURITY DEFINER (evita restricciones RLS).
-      // Si la funcion no existe en tu BD, ejecuta el SQL de la seccion de ayuda.
+      // Intenta primero vía RPC con SECURITY DEFINER (evita restricciones RLS).
+      // Si la función no existe en tu BD, ejecuta el SQL de la sección de ayuda.
       const { error: rpcError } = await supabase.rpc('actualizar_usuario_admin', {
         p_id:     editandoUsuario.id,
         p_rol:    editandoUsuario.rol,
@@ -81,7 +92,7 @@ export default function ConfiguracionPage() {
       });
 
       if (rpcError) {
-        // Fallback: UPDATE directo (funciona si hay politica RLS para admins)
+        // Fallback: UPDATE directo (funciona si hay política RLS para admins)
         const { error } = await supabase
           .from('usuarios_perfiles')
           .update({ rol: editandoUsuario.rol, activo: editandoUsuario.activo })
@@ -100,15 +111,15 @@ export default function ConfiguracionPage() {
 
   return (
     <>
-      <PageHeader titulo="Configuracion" icono="bi-gear" descripcion="Parametros del sistema y usuarios" />
+      <PageHeader titulo="Configuración" icono="bi-gear" descripcion="Parámetros del sistema y usuarios" />
 
       <div className="fp-page-body">
         <div className="row g-3">
-          {/* Parametros generales */}
+          {/* Parámetros generales */}
           <div className="col-lg-6">
             <div className="card border-0 shadow-sm h-100">
               <div className="card-header bg-white d-flex justify-content-between align-items-center">
-                <h2 className="h6 m-0">Parametros generales</h2>
+                <h2 className="h6 m-0">Parámetros generales</h2>
                 {hayCambios && (
                   <span className="badge bg-warning text-dark">Sin guardar</span>
                 )}
@@ -218,12 +229,6 @@ export default function ConfiguracionPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
-              <div className="card-footer bg-white">
-                <small className="text-secondary">
-                  Los usuarios se crean desde el Dashboard de Supabase.
-                  El rol se gestiona con la funcion RPC <code>actualizar_usuario_admin</code>.
-                </small>
               </div>
             </div>
           </div>

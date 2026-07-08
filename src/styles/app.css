@@ -1,15 +1,15 @@
 /* ===========================================================================
  * app.css
- * Tema visual del sistema POS de Bunker Ferreteria.
+ * Tema visual del sistema POS de Bunker Ferretería.
  *
  * Complementa a Bootstrap 5 (no lo reemplaza). Define:
  *   - Paleta de marca (variables CSS).
- *   - Layout: sidebar + area de contenido.
+ *   - Layout: sidebar + área de contenido.
  *   - Componentes del POS: barra superior, carrito, grilla, panel de cobro.
- *   - Encabezados de pagina (vistas placeholder).
+ *   - Encabezados de página (vistas placeholder).
  *
- * Convencion de prefijo: todas las clases propias empiezan con `fp-`
- * (Ferreteria POS) para no colisionar con utilidades de Bootstrap.
+ * Convención de prefijo: todas las clases propias empiezan con `fp-`
+ * (Ferretería POS) para no colisionar con utilidades de Bootstrap.
  * ======================================================================== */
 
 :root {
@@ -27,7 +27,7 @@
   --fp-radius: 0.65rem;
 }
 
-/* Reset minimo: el POS ocupa toda la pantalla sin scroll global. */
+/* Reset mínimo: el POS ocupa toda la pantalla sin scroll global. */
 html,
 body,
 #root {
@@ -76,7 +76,7 @@ body {
   padding-right: 0.5rem !important;
 }
 
-/* Boton de colapso del sidebar */
+/* Botón de colapso del sidebar */
 .fp-sidebar-toggle {
   background: transparent;
   border: none;
@@ -262,7 +262,7 @@ body {
  * VISTAS DEL BACK-OFFICE (Dashboard, Inventario, Ventas, ...)
  * ======================================================================== */
 
-/* Encabezado de pagina */
+/* Encabezado de página */
 .fp-page-header {
   flex-shrink: 0;
 }
@@ -277,7 +277,7 @@ body {
   flex-shrink: 0;
 }
 
-/* Cuerpo de pagina: area con scroll vertical propio */
+/* Cuerpo de página: área con scroll vertical propio */
 .fp-page-body {
   flex: 1 1 auto;
   min-height: 0;
@@ -408,14 +408,14 @@ body {
 }
 
 /* ===========================================================================
- * PANEL CENTRAL - Catalogo
+ * PANEL CENTRAL - Catálogo
  * ======================================================================== */
 .fp-product-grid {
   flex: 2 1 460px;
   min-width: 0;
 }
 
-/* Pestanas de categoria */
+/* Pestañas de categoría */
 .fp-cat-tab {
   background: #fff;
   border: 1px solid var(--fp-border);
@@ -464,7 +464,7 @@ body {
 .fp-product-name {
   font-size: 0.86rem;
   display: -webkit-box;
-  -webkit-line-clamp: 2; /* maximo 2 lineas, recorta el resto */
+  -webkit-line-clamp: 2; /* máximo 2 líneas, recorta el resto */
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -592,7 +592,7 @@ body {
   opacity: 0.55;
 }
 
-/* Boton naranja reutilizable (ej: "Recuperar" en el modal) */
+/* Botón naranja reutilizable (ej: "Recuperar" en el modal) */
 .fp-btn-accent {
   background: var(--fp-accent);
   border: none;
@@ -775,7 +775,7 @@ body {
     flex-wrap: wrap;
   }
 
-  /* Tablas con scroll horizontal en paginas de back-office */
+  /* Tablas con scroll horizontal en páginas de back-office */
   .fp-page-body {
     overflow-x: hidden;
   }
@@ -1229,7 +1229,7 @@ body {
  * IMPRESION — solo muestra el area del ticket
  * ======================================================================== */
 @media print {
-  /* Suprimir encabezados y pie de pagina del navegador (titulo, URL, fecha) */
+  /* Suprimir encabezados y pie de página del navegador (título, URL, fecha) */
   @page {
     margin: 6mm;
     size: 80mm auto;

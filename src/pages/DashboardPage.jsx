@@ -1,15 +1,16 @@
 /**
  * DashboardPage.jsx
- * Panel de control: KPIs del dia/mes, ultimas ventas, alertas de stock y
- * productos mas vendidos. Datos cargados desde Supabase via queries.js.
+ * Panel de control: KPIs del día/mes, últimas ventas, alertas de stock y
+ * productos más vendidos. Datos cargados desde Supabase vía queries.js.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getVentas, getVariantesInventario, getVentasEnEspera, getDetalleVentasGlobal, getFacturas } from '../data/queries';
+import { getVentas, getVariantesInventario, getVentasEnEspera, getDetalleVentasGlobal, getDetalleVenta, getFacturas } from '../data/queries';
 import { useQuery } from '../hooks/useQuery';
 import { formatCLP, formatFechaHora, esHoy, esMesActual } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
+import Modal from '../components/ui/Modal';
 
 export default function DashboardPage() {
   const { data: ventas = [], loading: lvt } = useQuery(getVentas);
@@ -17,6 +18,12 @@ export default function DashboardPage() {
   const { data: enEspera = [], loading: les } = useQuery(getVentasEnEspera);
   const { data: detalle = [], loading: ldet } = useQuery(getDetalleVentasGlobal);
   const { data: facturas = [] } = useQuery(getFacturas);
+  const [ventaSel, setVentaSel] = useState(null);
+
+  const { data: detalleVenta = [] } = useQuery(
+    () => (ventaSel ? getDetalleVenta(ventaSel.id) : Promise.resolve([])),
+    [ventaSel?.id],
+  );
 
   const loading = lvt || linv || les || ldet;
 
@@ -68,7 +75,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <PageHeader titulo="Dashboard" icono="bi-speedometer2" descripcion="Resumen general de la operacion" />
+      <PageHeader titulo="Dashboard" icono="bi-speedometer2" descripcion="Resumen general de la operación" />
       <div className="fp-page-body">
         {loading ? (
           <div className="d-flex justify-content-center py-5 text-secondary">
@@ -116,13 +123,13 @@ export default function DashboardPage() {
               <div className="col-lg-7">
                 <div className="card border-0 shadow-sm h-100">
                   <div className="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h2 className="h6 m-0">Ultimas ventas</h2>
+                    <h2 className="h6 m-0">Últimas ventas</h2>
                     <Link to="/ventas" className="small text-decoration-none">Ver todas <i className="bi bi-arrow-right" /></Link>
                   </div>
                   <div className="table-responsive">
                     <table className="table table-hover align-middle m-0">
                       <thead className="table-light">
-                        <tr><th>N.</th><th>Cliente</th><th>Fecha</th><th className="text-end">Total</th></tr>
+                        <tr><th>N.</th><th>Cliente</th><th>Fecha</th><th className="text-end">Total</th><th /></tr>
                       </thead>
                       <tbody>
                         {datos.ultimasVentas.map((v) => (
@@ -131,6 +138,16 @@ export default function DashboardPage() {
                             <td className="text-nowrap">{v.nombre_cliente}</td>
                             <td className="text-nowrap text-secondary">{formatFechaHora(v.creado_en)}</td>
                             <td className="text-end fw-semibold text-nowrap">{formatCLP(v.total)}</td>
+                            <td className="text-end">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary"
+                                title="Ver detalle"
+                                onClick={() => setVentaSel(v)}
+                              >
+                                <i className="bi bi-eye" />
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -169,7 +186,7 @@ export default function DashboardPage() {
 
               <div className="col-12">
                 <div className="card border-0 shadow-sm">
-                  <div className="card-header bg-white"><h2 className="h6 m-0">Productos mas vendidos</h2></div>
+                  <div className="card-header bg-white"><h2 className="h6 m-0">Productos más vendidos</h2></div>
                   <div className="card-body">
                     {datos.topProductos.map((p, i) => {
                       const max = datos.topProductos[0]?.unidades || 1;
@@ -195,6 +212,78 @@ export default function DashboardPage() {
           </>
         )}
       </div>
+
+      <Modal
+        show={ventaSel !== null}
+        onClose={() => setVentaSel(null)}
+        titulo={ventaSel ? `Venta #${ventaSel.numero_venta}` : ''}
+        icono="bi-receipt"
+        size="lg"
+        footer={
+          <button type="button" className="btn btn-outline-secondary" onClick={() => setVentaSel(null)}>
+            Cerrar
+          </button>
+        }
+      >
+        {ventaSel && (
+          <>
+            <div className="row g-2 mb-3 small">
+              <div className="col-sm-6">
+                <span className="text-secondary">Cliente: </span>
+                <strong>{ventaSel.nombre_cliente}</strong>
+              </div>
+              <div className="col-sm-6">
+                <span className="text-secondary">RUT: </span>
+                {ventaSel.rut_cliente || '-'}
+              </div>
+              <div className="col-sm-6">
+                <span className="text-secondary">Fecha: </span>
+                {formatFechaHora(ventaSel.creado_en)}
+              </div>
+              <div className="col-sm-6">
+                <span className="text-secondary">Método de pago: </span>
+                {ventaSel.metodo_pago}
+              </div>
+              {ventaSel.observaciones && (
+                <div className="col-12">
+                  <span className="text-secondary">Observaciones: </span>
+                  {ventaSel.observaciones}
+                </div>
+              )}
+            </div>
+
+            <table className="table table-sm align-middle">
+              <thead className="table-light">
+                <tr>
+                  <th>Producto</th>
+                  <th className="text-end">Cantidad</th>
+                  <th className="text-end">P. Unitario</th>
+                  <th className="text-end">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detalleVenta.map((d) => (
+                  <tr key={d.id}>
+                    <td>
+                      {d.producto_nombre}
+                      <small className="text-secondary"> {d.variante_nombre}</small>
+                    </td>
+                    <td className="text-end">{d.cantidad} {d.unidad_venta}</td>
+                    <td className="text-end">{formatCLP(d.precio_unitario)}</td>
+                    <td className="text-end fw-semibold">{formatCLP(d.subtotal)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan="3" className="text-end fw-bold">TOTAL</td>
+                  <td className="text-end fw-bold fs-6">{formatCLP(ventaSel.total)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </>
+        )}
+      </Modal>
     </>
   );
 }

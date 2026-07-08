@@ -2,7 +2,7 @@
  * InventarioPage.jsx
  * ---------------------------------------------------------------------------
  * Inventario: listado de variantes (SKU) con stock, precios y estado.
- * Permite buscar, filtrar por categoria, ver solo alertas de stock,
+ * Permite buscar, filtrar por categoría, ver solo alertas de stock,
  * añadir nuevos productos, editar y eliminar los existentes.
  * ---------------------------------------------------------------------------
  */
@@ -185,7 +185,7 @@ export default function InventarioPage() {
               <input
                 type="text"
                 className="form-control"
-                placeholder="Buscar por nombre o codigo..."
+                placeholder="Buscar por nombre o código..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
@@ -196,7 +196,7 @@ export default function InventarioPage() {
               value={categoriaId}
               onChange={(e) => setCategoriaId(e.target.value)}
             >
-              <option value="">Todas las categorias</option>
+              <option value="">Todas las categorías</option>
               {categorias.map((c) => (
                 <option key={c.id} value={c.id}>{c.nombre}</option>
               ))}
@@ -246,9 +246,9 @@ export default function InventarioPage() {
             <table className="table table-hover align-middle m-0">
               <thead className="table-light">
                 <tr className="text-nowrap">
-                  <th>Codigo</th>
+                  <th>Código</th>
                   <th>Producto</th>
-                  <th>Categoria</th>
+                  <th>Categoría</th>
                   <th className="text-end">P. Compra</th>
                   <th className="text-end">Margen</th>
                   <th className="text-end">P. Venta</th>

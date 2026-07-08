@@ -1,9 +1,9 @@
 /**
  * Sidebar.jsx
  * ---------------------------------------------------------------------------
- * Barra de navegacion lateral del sistema. Soporta:
+ * Barra de navegación lateral del sistema. Soporta:
  *   - Modo expandido (232px) y colapsado/icono (60px) en desktop.
- *   - Modo overlay en movil: se oculta por defecto y se abre encima del
+ *   - Modo overlay en móvil: se oculta por defecto y se abre encima del
  *     contenido cuando el usuario pulsa el hamburger de la barra superior.
  * ---------------------------------------------------------------------------
  */
@@ -35,33 +35,33 @@ export default function Sidebar({ collapsed, mobileOpen, onDesktopToggle, onMobi
         <i className="bi bi-wrench-adjustable-circle fs-3 text-warning flex-shrink-0" />
         {!collapsed && (
           <div className="lh-1 flex-grow-1 overflow-hidden">
-            <div className="fw-bold fs-5 text-truncate">Bunker Ferreteria</div>
+            <div className="fw-bold fs-5 text-truncate">Bunker Ferretería</div>
             <small className="fp-sidebar-tagline">Sistema de Ventas</small>
           </div>
         )}
 
-        {/* Boton colapsar/expandir — solo desktop */}
+        {/* Botón colapsar/expandir — solo desktop */}
         <button
           type="button"
           className="fp-sidebar-toggle d-none d-md-flex align-items-center justify-content-center"
           onClick={onDesktopToggle}
-          title={collapsed ? 'Expandir menu' : 'Colapsar menu'}
+          title={collapsed ? 'Expandir menú' : 'Colapsar menú'}
         >
           <i className={`bi ${collapsed ? 'bi-chevron-double-right' : 'bi-chevron-double-left'}`} />
         </button>
 
-        {/* Boton cerrar — solo movil */}
+        {/* Botón cerrar — solo móvil */}
         <button
           type="button"
           className="fp-sidebar-toggle d-flex d-md-none align-items-center justify-content-center ms-auto"
           onClick={onMobileClose}
-          title="Cerrar menu"
+          title="Cerrar menú"
         >
           <i className="bi bi-x-lg" />
         </button>
       </div>
 
-      {/* ------------------------ NAVEGACION --------------------------- */}
+      {/* ------------------------ NAVEGACIÓN --------------------------- */}
       <nav className="fp-sidebar-nav flex-grow-1 overflow-auto px-2 py-3">
         <ul className="nav flex-column gap-1">
           {navItems.map((item) => (
@@ -130,10 +130,10 @@ export default function Sidebar({ collapsed, mobileOpen, onDesktopToggle, onMobi
           type="button"
           className={`fp-btn-logout w-100 d-flex align-items-center gap-2${collapsed ? ' justify-content-center' : ''}`}
           onClick={signOut}
-          title="Cerrar sesion"
+          title="Cerrar sesión"
         >
           <i className="bi bi-box-arrow-left" />
-          {!collapsed && <span>Cerrar sesion</span>}
+          {!collapsed && <span>Cerrar sesión</span>}
         </button>
       </div>
     </aside>

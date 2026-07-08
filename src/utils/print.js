@@ -36,7 +36,7 @@ export function imprimirCotizacion(cotizacion) {
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Cotización — Bunker Ferreteria</title>
+  <title>Cotización — Bunker Ferretería</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; font-size: 12px; color: #222; padding: 32px; }
@@ -74,7 +74,7 @@ export function imprimirCotizacion(cotizacion) {
 <body>
   <div class="header">
     <div class="brand">
-      Bunker Ferreteria
+      Bunker Ferretería
       <small>Sistema de Punto de Venta</small>
     </div>
     <div class="doc-title">
@@ -110,7 +110,7 @@ export function imprimirCotizacion(cotizacion) {
   </div>
 
   <div class="footer">
-    Cotización generada por Bunker Ferreteria · Válida por 15 días desde la fecha de emisión.
+    Cotización generada por Bunker Ferretería · Válida por 15 días desde la fecha de emisión.
   </div>
 
   <script>window.onload = function() { window.print(); };<\/script>

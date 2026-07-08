@@ -2,7 +2,7 @@
  * AddProveedorModal.jsx
  * ---------------------------------------------------------------------------
  * Formulario para registrar un nuevo proveedor en Supabase.
- * Campos: nombre (requerido), telefono, correo, direccion, observaciones.
+ * Campos: nombre (requerido), teléfono, correo, dirección, observaciones.
  * ---------------------------------------------------------------------------
  */
 import { useState } from 'react';
@@ -33,7 +33,7 @@ export default function AddProveedorModal({ show, onClose, onProveedorCreado }) 
     const e = {};
     if (!form.nombre.trim()) e.nombre = 'El nombre es obligatorio.';
     if (form.correo.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo.trim())) {
-      e.correo = 'El correo no tiene un formato valido.';
+      e.correo = 'El correo no tiene un formato válido.';
     }
     return e;
   }
@@ -123,9 +123,9 @@ export default function AddProveedorModal({ show, onClose, onProveedorCreado }) 
           {errores.nombre && <div className="invalid-feedback">{errores.nombre}</div>}
         </div>
 
-        {/* Telefono + Correo */}
+        {/* Teléfono + Correo */}
         <div className="col-sm-6">
-          <label className="form-label fw-semibold">Telefono</label>
+          <label className="form-label fw-semibold">Teléfono</label>
           <input
             type="text"
             className="form-control"
@@ -146,9 +146,9 @@ export default function AddProveedorModal({ show, onClose, onProveedorCreado }) 
           {errores.correo && <div className="invalid-feedback">{errores.correo}</div>}
         </div>
 
-        {/* Direccion */}
+        {/* Dirección */}
         <div className="col-12">
-          <label className="form-label fw-semibold">Direccion</label>
+          <label className="form-label fw-semibold">Dirección</label>
           <input
             type="text"
             className="form-control"

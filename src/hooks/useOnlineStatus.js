@@ -1,8 +1,8 @@
 /**
  * useOnlineStatus.js
  * ---------------------------------------------------------------------------
- * Detecta el estado de conexion y expone el conteo de ventas pendientes
- * de sincronizar. Dispara la sincronizacion automatica al recuperar conexion.
+ * Detecta el estado de conexión y expone el conteo de ventas pendientes
+ * de sincronizar. Dispara la sincronización automática al recuperar conexión.
  * ---------------------------------------------------------------------------
  */
 import { useCallback, useEffect, useState } from 'react';
@@ -36,7 +36,7 @@ async function sincronizarPendientes() {
 
       if (errV) throw new Error(errV.message);
 
-      // 2. Insertar lineas
+      // 2. Insertar líneas
       const lineas = datos.lineas.map((l) => ({
         venta_id: ventaDB.id,
         variante_id: l.variante_id,

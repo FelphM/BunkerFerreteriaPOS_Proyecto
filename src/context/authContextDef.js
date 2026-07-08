@@ -1,7 +1,7 @@
 /**
  * authContextDef.js
  * ---------------------------------------------------------------------------
- * Definicion del objeto Context de autenticacion.
+ * Definición del objeto Context de autenticación.
  * Separado de AuthContext.jsx para cumplir la regla
  * react-refresh/only-export-components (un archivo por tipo de export).
  * ---------------------------------------------------------------------------

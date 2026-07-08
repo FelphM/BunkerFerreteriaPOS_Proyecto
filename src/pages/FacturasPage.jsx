@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getFacturas, getProveedores } from '../data/queries';
+import { getFacturas, getProveedores, getConfigNumero } from '../data/queries';
 import { useQuery } from '../hooks/useQuery';
 import { supabase } from '../lib/supabaseClient';
 import { formatCLP, formatFecha } from '../utils/format';
@@ -329,11 +329,31 @@ export default function FacturasPage() {
   const [filtroDia, setFiltroDia] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState('activos');
   const [filtroProveedor, setFiltroProveedor] = useState('');
-  const [diasAlerta, setDiasAlerta] = useState(() => {
-    const saved = localStorage.getItem('fp_dias_alerta');
-    return saved ? Math.max(1, Math.min(90, Number(saved))) : 7;
-  });
+  const [diasAlerta, setDiasAlerta] = useState(7);
   const [cargando, setCargando] = useState(null);
+
+  useEffect(() => {
+    getConfigNumero('dias_alerta_vencimiento').then((v) => { if (v) setDiasAlerta(v); });
+  }, []);
+
+  async function handleCambiarDiasAlerta(valor) {
+    const v = Math.max(1, Math.min(90, valor || 7));
+    setDiasAlerta(v);
+    const { data, error } = await supabase
+      .from('configuracion')
+      .update({ valor: String(v) })
+      .eq('clave', 'dias_alerta_vencimiento')
+      .select();
+    // PostgREST no reporta error si RLS bloquea el UPDATE (éxito con 0 filas).
+    if (error || !data || data.length === 0) {
+      window.alert(
+        'No se pudo guardar el cambio: falta la política RLS de UPDATE en la tabla ' +
+        'configuracion (ver comentario al inicio de ConfiguracionPage.jsx).',
+      );
+      return;
+    }
+    window.dispatchEvent(new Event('fp:facturas-changed'));
+  }
 
   const facturasEnriquecidas = useMemo(() =>
     facturas.map((f) => ({
@@ -476,11 +496,7 @@ export default function FacturasPage() {
                 <div className="input-group input-group-sm">
                   <input type="number" className="form-control" min="1" max="90"
                     value={diasAlerta}
-                    onChange={(e) => {
-                      const v = Math.max(1, Math.min(90, Number(e.target.value) || 7));
-                      setDiasAlerta(v);
-                      localStorage.setItem('fp_dias_alerta', String(v));
-                    }} />
+                    onChange={(e) => handleCambiarDiasAlerta(Number(e.target.value))} />
                   <span className="input-group-text">días</span>
                 </div>
                 <div className="form-text">Rango para "Por vencer"</div>

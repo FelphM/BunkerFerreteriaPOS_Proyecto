@@ -11,12 +11,13 @@
  * ---------------------------------------------------------------------------
  */
 import { useMemo, useState } from 'react';
-import { getClientes, getClientesDerivados } from '../data/queries';
+import { getClientes, getClientesDerivados, getVentasPorCliente } from '../data/queries';
 import { useQuery } from '../hooks/useQuery';
 import { supabase } from '../lib/supabaseClient';
-import { formatCLP, formatFecha } from '../utils/format';
+import { formatCLP, formatFecha, formatFechaHora } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
+import Modal from '../components/ui/Modal';
 import AddClienteModal from '../components/AddClienteModal';
 import EditClienteModal from '../components/EditClienteModal';
 
@@ -27,6 +28,12 @@ export default function ClientesPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [editandoCliente, setEditandoCliente] = useState(null);
   const [eliminando, setEliminando] = useState(null);
+  const [historialCliente, setHistorialCliente] = useState(null); // { nombre, rut }
+
+  const { data: ventasCliente = [], loading: cargandoVentas } = useQuery(
+    () => (historialCliente ? getVentasPorCliente(historialCliente.rut, historialCliente.nombre) : Promise.resolve([])),
+    [historialCliente],
+  );
 
   async function handleEliminarCliente(c) {
     if (!window.confirm(`¿Eliminar al cliente "${c.nombre}"? Esta acción no se puede deshacer.`)) return;
@@ -89,10 +96,12 @@ export default function ClientesPage() {
         tiene_perfil: false,
       }));
 
-    // También clientes sin RUT derivados de ventas (si no están registrados por nombre)
+    // También clientes sin RUT derivados de ventas (si no están registrados por nombre).
+    // Se excluye "Cliente General": es el nombre genérico que usa el POS para ventas de
+    // mostrador sin cliente identificado, no representa a una persona real.
     const nombresRegistrados = new Set(clientesRegistrados.map((c) => c.nombre.toLowerCase()));
     const sinRutSinPerfil = clientesVentas
-      .filter((c) => !c.rut && !nombresRegistrados.has(c.nombre.toLowerCase()))
+      .filter((c) => !c.rut && c.nombre !== 'Cliente General' && !nombresRegistrados.has(c.nombre.toLowerCase()))
       .map((c) => ({
         clave: c.clave,
         nombre: c.nombre,
@@ -217,7 +226,7 @@ export default function ClientesPage() {
                   <th>Correo</th>
                   <th className="text-center">Compras</th>
                   <th className="text-end">Total gastado</th>
-                  <th>Ultima compra</th>
+                  <th>Última compra</th>
                   <th />
                 </tr>
               </thead>
@@ -225,7 +234,7 @@ export default function ClientesPage() {
                 {filtrados.length === 0 ? (
                   <tr>
                     <td colSpan="8" className="text-center text-secondary py-4">
-                      Sin clientes para la busqueda actual.
+                      Sin clientes para la búsqueda actual.
                     </td>
                   </tr>
                 ) : (
@@ -241,7 +250,18 @@ export default function ClientesPage() {
                       <td className="text-nowrap text-secondary">{c.giro || '-'}</td>
                       <td className="text-nowrap">{c.correo || '-'}</td>
                       <td className="text-center">
-                        <span className="badge bg-secondary">{c.compras}</span>
+                        {c.compras > 0 ? (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-link p-0 text-decoration-none"
+                            title="Ver historial de compras"
+                            onClick={() => setHistorialCliente({ nombre: c.nombre, rut: c.rut })}
+                          >
+                            <span className="badge bg-secondary">{c.compras}</span>
+                          </button>
+                        ) : (
+                          <span className="badge bg-secondary">{c.compras}</span>
+                        )}
                       </td>
                       <td className="text-end fw-semibold text-nowrap">
                         {c.total_gastado > 0 ? formatCLP(c.total_gastado) : '-'}
@@ -294,6 +314,45 @@ export default function ClientesPage() {
         onClose={() => setEditandoCliente(null)}
         onClienteEditado={() => { setEditandoCliente(null); refetch(); }}
       />
+
+      <Modal
+        show={!!historialCliente}
+        onClose={() => setHistorialCliente(null)}
+        titulo={historialCliente ? `Historial de compras — ${historialCliente.nombre}` : ''}
+        icono="bi-clock-history"
+        size="lg"
+      >
+        {cargandoVentas ? (
+          <div className="text-center py-4 text-secondary">
+            <span className="spinner-border spinner-border-sm me-2" />Cargando...
+          </div>
+        ) : ventasCliente.length === 0 ? (
+          <p className="text-secondary text-center m-0 py-3">Este cliente no registra ventas.</p>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-sm table-hover align-middle m-0">
+              <thead className="table-light">
+                <tr>
+                  <th>N. Venta</th>
+                  <th>Fecha</th>
+                  <th>Método de pago</th>
+                  <th className="text-end">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ventasCliente.map((v) => (
+                  <tr key={v.id}>
+                    <td className="fw-semibold">#{v.numero_venta}</td>
+                    <td className="text-nowrap text-secondary">{formatFechaHora(v.creado_en)}</td>
+                    <td>{v.metodo_pago}</td>
+                    <td className="text-end fw-semibold">{formatCLP(v.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Modal>
     </>
   );
 }

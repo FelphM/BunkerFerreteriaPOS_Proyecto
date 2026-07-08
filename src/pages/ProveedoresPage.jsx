@@ -2,15 +2,16 @@
  * ProveedoresPage.jsx
  * ---------------------------------------------------------------------------
  * Proveedores: listado con datos de contacto y la cantidad de productos
- * asociados a cada uno. Incluye busqueda y modal para agregar nuevos.
+ * asociados a cada uno. Incluye búsqueda y modal para agregar nuevos.
  * ---------------------------------------------------------------------------
  */
 import { useMemo, useState } from 'react';
-import { getProveedores } from '../data/queries';
+import { getProveedores, getProductosPorProveedor } from '../data/queries';
 import { useQuery } from '../hooks/useQuery';
 import { supabase } from '../lib/supabaseClient';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
+import Modal from '../components/ui/Modal';
 import AddProveedorModal from '../components/AddProveedorModal';
 import EditProveedorModal from '../components/EditProveedorModal';
 
@@ -20,6 +21,12 @@ export default function ProveedoresPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [editandoProveedor, setEditandoProveedor] = useState(null);
   const [eliminando, setEliminando] = useState(null);
+  const [productosProveedor, setProductosProveedor] = useState(null); // { id, nombre } del proveedor elegido
+
+  const { data: productosDelProveedor = [], loading: cargandoProductos } = useQuery(
+    () => (productosProveedor ? getProductosPorProveedor(productosProveedor.id) : Promise.resolve([])),
+    [productosProveedor],
+  );
 
   async function handleEliminarProveedor(p) {
     if (!window.confirm(`¿Eliminar al proveedor "${p.nombre}"? Esta acción no se puede deshacer.`)) return;
@@ -110,7 +117,7 @@ export default function ProveedoresPage() {
               <input
                 type="text"
                 className="form-control"
-                placeholder="Buscar por nombre, correo o direccion..."
+                placeholder="Buscar por nombre, correo o dirección..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
@@ -125,7 +132,7 @@ export default function ProveedoresPage() {
               <thead className="table-light">
                 <tr className="text-nowrap">
                   <th>Proveedor</th>
-                  <th>Telefono</th>
+                  <th>Teléfono</th>
                   <th>Correo</th>
                   <th className="text-center">Productos</th>
                   <th>Observaciones</th>
@@ -136,7 +143,7 @@ export default function ProveedoresPage() {
                 {filtrados.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="text-center text-secondary py-4">
-                      Sin proveedores para la busqueda actual.
+                      Sin proveedores para la búsqueda actual.
                     </td>
                   </tr>
                 ) : (
@@ -153,9 +160,18 @@ export default function ProveedoresPage() {
                       <td className="text-nowrap">{p.telefono || '-'}</td>
                       <td className="text-nowrap">{p.correo || '-'}</td>
                       <td className="text-center">
-                        <span className="badge bg-secondary">
-                          {p.productos_count}
-                        </span>
+                        {p.productos_count > 0 ? (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-link p-0 text-decoration-none"
+                            title="Ver productos del proveedor"
+                            onClick={() => setProductosProveedor({ id: p.id, nombre: p.nombre })}
+                          >
+                            <span className="badge bg-secondary">{p.productos_count}</span>
+                          </button>
+                        ) : (
+                          <span className="badge bg-secondary">{p.productos_count}</span>
+                        )}
                       </td>
                       <td>
                         <small className="text-secondary">
@@ -205,6 +221,47 @@ export default function ProveedoresPage() {
         onClose={() => setEditandoProveedor(null)}
         onProveedorEditado={() => { setEditandoProveedor(null); refetch(); }}
       />
+
+      <Modal
+        show={!!productosProveedor}
+        onClose={() => setProductosProveedor(null)}
+        titulo={productosProveedor ? `Productos de ${productosProveedor.nombre}` : ''}
+        icono="bi-box-seam"
+        size="lg"
+      >
+        {cargandoProductos ? (
+          <div className="text-center py-4 text-secondary">
+            <span className="spinner-border spinner-border-sm me-2" />Cargando...
+          </div>
+        ) : productosDelProveedor.length === 0 ? (
+          <p className="text-secondary text-center m-0 py-3">Este proveedor no tiene productos asociados.</p>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-sm table-hover align-middle m-0">
+              <thead className="table-light">
+                <tr>
+                  <th>Producto</th>
+                  <th>Código interno</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {productosDelProveedor.map((p) => (
+                  <tr key={p.id}>
+                    <td className="fw-semibold">{p.nombre}</td>
+                    <td className="text-secondary">{p.codigo_interno || '-'}</td>
+                    <td>
+                      <span className={`badge bg-${p.activo ? 'success' : 'secondary'}`}>
+                        {p.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Modal>
     </>
   );
 }

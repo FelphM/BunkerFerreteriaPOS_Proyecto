@@ -1,9 +1,9 @@
 /**
  * PagePlaceholder.jsx
  * ---------------------------------------------------------------------------
- * Vista placeholder cohesiva. Hoy solo la usa la ruta comodin (404), pero
- * sigue disponible por si se agrega una seccion nueva al sidebar antes de
- * construir su pagina real.
+ * Vista placeholder cohesiva. Hoy solo la usa la ruta comodín (404), pero
+ * sigue disponible por si se agrega una sección nueva al sidebar antes de
+ * construir su página real.
  *
  * @param {string} titulo
  * @param {string} icono
@@ -18,7 +18,7 @@ export default function PagePlaceholder({ titulo, icono, descripcion }) {
       <PageHeader
         titulo={titulo}
         icono={icono}
-        descripcion={descripcion || `Modulo de ${titulo.toLowerCase()}`}
+        descripcion={descripcion || `Módulo de ${titulo.toLowerCase()}`}
       />
       <div className="fp-page-body">
         <div className="card border-0 shadow-sm h-100">
@@ -26,7 +26,7 @@ export default function PagePlaceholder({ titulo, icono, descripcion }) {
             <div className="fp-placeholder-icon mb-3">
               <i className={`bi ${icono}`} />
             </div>
-            <h2 className="h5">Seccion {titulo} en construccion</h2>
+            <h2 className="h5">Sección {titulo} en construcción</h2>
             <p className="mb-0" style={{ maxWidth: '420px' }}>
               Esta vista comparte el layout y estilo del sistema, lista para
               implementar.

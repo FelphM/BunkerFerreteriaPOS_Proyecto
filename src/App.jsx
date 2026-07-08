@@ -1,18 +1,18 @@
 /**
  * App.jsx
  * ---------------------------------------------------------------------------
- * Definicion de rutas del sistema.
+ * Definición de rutas del sistema.
  *
  * ESTRUCTURA:
- *   /login              -> Publica: <LoginPage />
- *   /*                  -> Privada: requiere sesion activa (<ProtectedRoute>)
+ *   /login              -> Pública: <LoginPage />
+ *   /*                  -> Privada: requiere sesión activa (<ProtectedRoute>)
  *     /                 ->   <AppLayout> con <PosPage />
  *     /dashboard        ->   <AppLayout> con <DashboardPage />
  *     ...               ->   etc.
  *
  * <ProtectedRoute> se encarga de:
- *   - Mostrar un splash mientras carga la sesion inicial.
- *   - Redirigir a /login si no hay sesion.
+ *   - Mostrar un splash mientras carga la sesión inicial.
+ *   - Redirigir a /login si no hay sesión.
  *   - Mostrar mensaje de cuenta desactivada si perfil.activo = false.
  * ---------------------------------------------------------------------------
  */
@@ -38,11 +38,11 @@ import './styles/app.css';
 export default function App() {
   return (
     <Routes>
-      {/* ==================== RUTAS PUBLICAS ========================== */}
+      {/* ==================== RUTAS PÚBLICAS ========================== */}
       <Route path="/login" element={<LoginPage />} />
 
       {/* ==================== RUTAS PRIVADAS ========================== */}
-      {/* <ProtectedRoute> verifica la sesion antes de renderizar AppLayout */}
+      {/* <ProtectedRoute> verifica la sesión antes de renderizar AppLayout */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route index element={<PosPage />} />
@@ -63,7 +63,7 @@ export default function App() {
             path="*"
             element={
               <PagePlaceholder
-                titulo="Pagina no encontrada"
+                titulo="Página no encontrada"
                 icono="bi-exclamation-triangle"
                 descripcion="La ruta solicitada no existe."
               />

@@ -3,10 +3,10 @@
  * ---------------------------------------------------------------------------
  * PANEL IZQUIERDO: Carrito de Venta.
  *
- * Lista cada item con: nombre + variante, codigo, control de cantidad
- * (- [input decimal] +), precio unitario, subtotal y boton de eliminar.
+ * Lista cada item con: nombre + variante, código, control de cantidad
+ * (- [input decimal] +), precio unitario, subtotal y botón de eliminar.
  *
- * Componente de presentacion: toda la logica vive en usePosCart.
+ * Componente de presentación: toda la lógica vive en usePosCart.
  *
  * @param {object[]} cart             Items del carrito.
  * @param {Function} onChangeQuantity (id, delta)    -> botones + / -.
@@ -50,10 +50,10 @@ export default function CartPanel({
       {/* ---------------------------- BODY ----------------------------- */}
       <div className="card-body overflow-auto p-2">
         {vacio ? (
-          // Estado vacio
+          // Estado vacío
           <div className="d-flex flex-column align-items-center justify-content-center text-secondary h-100 text-center px-3">
             <i className="bi bi-cart-x display-4 mb-3" />
-            <h3 className="h6">El carrito esta vacio</h3>
+            <h3 className="h6">El carrito está vacío</h3>
             <p className="small mb-0">
               Haga clic en un producto para agregarlo.
             </p>
@@ -103,7 +103,7 @@ export default function CartPanel({
                       >
                         <i className="bi bi-dash-lg" />
                       </button>
-                      {/* Input numerico: acepta decimales (metro/kg). */}
+                      {/* Input numérico: acepta decimales (metro/kg). */}
                       <input
                         type="number"
                         className="form-control text-center"

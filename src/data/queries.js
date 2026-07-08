@@ -3,23 +3,23 @@
  * ---------------------------------------------------------------------------
  * Capa de ACCESO A DATOS del sistema (el "seam" para Supabase).
  *
- * Cada funcion devuelve datos ya listos para la UI (con sus JOIN resueltos).
+ * Cada función devuelve datos ya listos para la UI (con sus JOIN resueltos).
  * Lee directamente desde Supabase usando el cliente autenticado.
  *
  * NOTA IMPORTANTE SOBRE RLS:
  *   Todas las tablas tienen Row Level Security activo. Las queries solo
- *   funcionan con una sesion activa (auth.role() = 'authenticated').
- *   El cliente Supabase manda el token de sesion automaticamente.
+ *   funcionan con una sesión activa (auth.role() = 'authenticated').
+ *   El cliente Supabase manda el token de sesión automáticamente.
  *
  * NOTA SOBRE `icono`:
- *   El campo `icono` de categorias es SOLO-UI (no existe en la BD).
- *   Se mapea aqui segun el nombre de la categoria. Si agregas categorias
+ *   El campo `icono` de categorías es SOLO-UI (no existe en la BD).
+ *   Se mapea aquí según el nombre de la categoría. Si agregas categorías
  *   nuevas en Supabase, añade su icono en ICONOS_CATEGORIA.
  * ---------------------------------------------------------------------------
  */
 import { supabase } from '../lib/supabaseClient';
 
-// Mapa nombre de categoria -> clase de Bootstrap Icon (solo para la UI).
+// Mapa nombre de categoría -> clase de Bootstrap Icon (solo para la UI).
 const ICONOS_CATEGORIA = {
   'Herramientas':  'bi-tools',
   'Tornilleria':   'bi-nut',
@@ -31,7 +31,7 @@ const ICONOS_CATEGORIA = {
 const ICONO_DEFAULT = 'bi-box-seam';
 
 // ---------------------------------------------------------------------------
-// Helper: lanza el error de Supabase como excepcion de JS para que los
+// Helper: lanza el error de Supabase como excepción de JS para que los
 // componentes puedan capturarlo con try/catch o el usuario vea el mensaje.
 // ---------------------------------------------------------------------------
 function throwIfError({ error }) {
@@ -39,17 +39,21 @@ function throwIfError({ error }) {
 }
 
 // ===========================================================================
-// CONFIGURACION
+// CONFIGURACIÓN
 // ===========================================================================
 
-/** Lista completa de parametros de configuracion. */
+// Parámetros que existen en la tabla pero no se editan desde Configuración
+// (nombre_tienda: el nombre del local es fijo, no configurable).
+const CLAVES_OCULTAS = ['nombre_tienda'];
+
+/** Lista de parámetros de configuración editables desde la UI. */
 export async function getConfiguracion() {
   const res = await supabase.from('configuracion').select('*');
   throwIfError(res);
-  return res.data ?? [];
+  return (res.data ?? []).filter((c) => !CLAVES_OCULTAS.includes(c.clave));
 }
 
-/** Valor (string) de un parametro por su clave. */
+/** Valor (string) de un parámetro por su clave. */
 export async function getConfigValor(clave) {
   const res = await supabase
     .from('configuracion')
@@ -60,17 +64,17 @@ export async function getConfigValor(clave) {
   return res.data?.valor ?? null;
 }
 
-/** Valor numerico de un parametro (ej: porcentaje_iva). */
+/** Valor numérico de un parámetro (ej: porcentaje_iva). */
 export async function getConfigNumero(clave) {
   const val = await getConfigValor(clave);
   return Number(val) || 0;
 }
 
 // ===========================================================================
-// CATALOGO
+// CATÁLOGO
 // ===========================================================================
 
-/** Categorias de producto, con icono de UI asignado por nombre. */
+/** Categorías de producto, con icono de UI asignado por nombre. */
 export async function getCategorias() {
   const res = await supabase
     .from('categorias')
@@ -97,8 +101,8 @@ export async function getProveedores() {
 }
 
 /**
- * Variantes con datos de producto/categoria/proveedor resueltos.
- * Fuente de la vista Inventario y del catalogo del POS.
+ * Variantes con datos de producto/categoría/proveedor resueltos.
+ * Fuente de la vista Inventario y del catálogo del POS.
  */
 export async function getVariantesInventario() {
   const res = await supabase
@@ -176,7 +180,7 @@ export async function getVariantesInventario() {
       codigo_interno: prod.codigo_interno ?? '',
       producto_activo: prod.activo ?? false,
       categoria_id: prod.categoria_id ?? null,
-      categoria_nombre: prod.categorias?.nombre ?? 'Sin categoria',
+      categoria_nombre: prod.categorias?.nombre ?? 'Sin categoría',
       proveedor_id: prod.proveedor_id ?? null,
       proveedor_nombre: prod.proveedores?.nombre ?? 'Sin proveedor',
       // Calculos UI — derivadas no suman al valor total para evitar doble conteo
@@ -194,13 +198,13 @@ export async function getSellableItems() {
   const variantes = await getVariantesInventario();
   const activas = variantes.filter((v) => v.activo && v.producto_activo);
 
-  // Cuenta cuantas variantes tiene cada producto para marcar `tieneVariantes`.
+  // Cuenta cuántas variantes tiene cada producto para marcar `tieneVariantes`.
   const conteo = {};
   for (const v of activas) {
     conteo[v.producto_id] = (conteo[v.producto_id] ?? 0) + 1;
   }
 
-  // Obtener los iconos de categoria.
+  // Obtener los iconos de categoría.
   const cats = await getCategorias();
   const iconoPorCat = Object.fromEntries(cats.map((c) => [c.id, c.icono]));
 
@@ -224,7 +228,7 @@ export async function getSellableItems() {
 // VENTAS
 // ===========================================================================
 
-/** Cabeceras de ventas, mas recientes primero. */
+/** Cabeceras de ventas, más recientes primero. */
 export async function getVentas() {
   const res = await supabase
     .from('ventas')
@@ -234,7 +238,7 @@ export async function getVentas() {
   return res.data ?? [];
 }
 
-/** Lineas de una venta con datos de variante/producto resueltos. */
+/** Líneas de una venta con datos de variante/producto resueltos. */
 export async function getDetalleVenta(ventaId) {
   const res = await supabase
     .from('detalle_ventas')
@@ -308,7 +312,7 @@ export async function getDetalleVentasGlobal() {
 // COMPRAS
 // ===========================================================================
 
-/** Cabeceras de compra con nombre del proveedor, mas recientes primero. */
+/** Cabeceras de compra con nombre del proveedor, más recientes primero. */
 export async function getCompras() {
   const res = await supabase
     .from('compras')
@@ -322,7 +326,7 @@ export async function getCompras() {
   }));
 }
 
-/** Lineas de una compra con datos de variante/producto resueltos. */
+/** Líneas de una compra con datos de variante/producto resueltos. */
 export async function getDetalleCompra(compraId) {
   const res = await supabase
     .from('detalle_compras')
@@ -359,7 +363,7 @@ export async function getDetalleCompra(compraId) {
 // MOVIMIENTOS DE INVENTARIO
 // ===========================================================================
 
-/** Bitacora de movimientos, mas recientes primero. */
+/** Bitácora de movimientos, más recientes primero. */
 export async function getMovimientos() {
   const res = await supabase
     .from('movimientos_inventario')
@@ -468,6 +472,40 @@ export async function getClientesDerivados() {
   }
 
   return [...mapa.values()].sort((a, b) => b.total_gastado - a.total_gastado);
+}
+
+/**
+ * Ventas de un cliente puntual: por RUT si lo tiene, o por nombre exacto
+ * cuando es un cliente sin RUT derivado del historial (bucket "sin-rut").
+ */
+export async function getVentasPorCliente(rut, nombre) {
+  let query = supabase.from('ventas').select('*').order('creado_en', { ascending: false });
+  query = rut ? query.eq('rut_cliente', rut) : query.eq('nombre_cliente', nombre).is('rut_cliente', null);
+  const res = await query;
+  throwIfError(res);
+  return res.data ?? [];
+}
+
+/** Productos que pertenecen a una categoría puntual. */
+export async function getProductosPorCategoria(categoriaId) {
+  const res = await supabase
+    .from('productos')
+    .select('id, nombre, codigo_interno, activo')
+    .eq('categoria_id', categoriaId)
+    .order('nombre');
+  throwIfError(res);
+  return res.data ?? [];
+}
+
+/** Productos que pertenecen a un proveedor puntual. */
+export async function getProductosPorProveedor(proveedorId) {
+  const res = await supabase
+    .from('productos')
+    .select('id, nombre, codigo_interno, activo')
+    .eq('proveedor_id', proveedorId)
+    .order('nombre');
+  throwIfError(res);
+  return res.data ?? [];
 }
 
 // ===========================================================================

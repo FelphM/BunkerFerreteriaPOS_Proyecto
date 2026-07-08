@@ -1,11 +1,11 @@
 /**
  * usePosCart.js
  * ---------------------------------------------------------------------------
- * Custom Hook con TODA la logica de negocio del Punto de Venta:
+ * Custom Hook con TODA la lógica de negocio del Punto de Venta:
  *
  *   - Estado del carrito de compra.
- *   - Alta / baja / edicion de cantidades (acepta decimales).
- *   - Calculos matematicos (subtotal, neto, IVA, total) con useMemo.
+ *   - Alta / baja / edición de cantidades (acepta decimales).
+ *   - Cálculos matemáticos (subtotal, neto, IVA, total) con useMemo.
  *   - Ventas en espera ("Apartar" / "Recuperar").
  *   - Escritura a Supabase: ventas, detalle_ventas, ventas_en_espera.
  * ---------------------------------------------------------------------------
@@ -27,7 +27,7 @@ export function usePosCart() {
   const [heldSales, setHeldSales] = useState([]);
   const [ivaPct, setIvaPct] = useState(19); // default hasta que cargue config
 
-  // Carga la configuracion y las ventas en espera al montar.
+  // Carga la configuración y las ventas en espera al montar.
   useEffect(() => {
     getConfigNumero('porcentaje_iva').then((v) => { if (v) setIvaPct(v); });
     getVentasEnEspera().then(setHeldSales).catch(console.error);
@@ -145,9 +145,9 @@ export function usePosCart() {
   /**
    * Persiste la venta en Supabase:
    *   1. Insert en `ventas` (cabecera).
-   *   2. Insert en `detalle_ventas` (lineas).
-   *   El trigger `tg_descontar_stock_venta` descuenta el stock automaticamente.
-   *   El trigger `tg_recalcular_total_venta` calcula el total automaticamente.
+   *   2. Insert en `detalle_ventas` (líneas).
+   *   El trigger `tg_descontar_stock_venta` descuenta el stock automáticamente.
+   *   El trigger `tg_recalcular_total_venta` calcula el total automáticamente.
    *
    * @param {object} datos - { nombreCliente, rutCliente, correoCliente,
    *                           metodoPago, observaciones }
@@ -155,11 +155,11 @@ export function usePosCart() {
    */
   const finalizarVenta = useCallback(
     async ({ nombreCliente, rutCliente, correoCliente, metodoPago, observaciones }) => {
-      if (cart.length === 0) return { success: false, error: 'Carrito vacio' };
+      if (cart.length === 0) return { success: false, error: 'Carrito vacío' };
 
       const usuarioId = session?.user?.id ?? null;
 
-      // Si no hay conexion, guardar en Dexie para sync posterior.
+      // Si no hay conexión, guardar en Dexie para sync posterior.
       if (!navigator.onLine) {
         const lineas = cart.map((item) => ({
           variante_id: item.id,
@@ -192,7 +192,7 @@ export function usePosCart() {
 
       if (errVenta) return { success: false, error: errVenta.message };
 
-      // 2. Insertar lineas de detalle.
+      // 2. Insertar líneas de detalle.
       const lineas = cart.map((item) => ({
         venta_id: venta.id,
         variante_id: item.id,
@@ -214,7 +214,7 @@ export function usePosCart() {
   );
 
   // -------------------------------------------------------------------------
-  // CALCULOS
+  // CÁLCULOS
   // -------------------------------------------------------------------------
   const totals = useMemo(() => {
     const total = cart.reduce(
@@ -235,7 +235,7 @@ export function usePosCart() {
   }, [cart, ivaPct]);
 
   // -------------------------------------------------------------------------
-  // API PUBLICA
+  // API PÚBLICA
   // -------------------------------------------------------------------------
   return {
     cart,

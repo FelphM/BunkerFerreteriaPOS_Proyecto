@@ -43,7 +43,7 @@ export default function EditProveedorModal({ proveedor, onClose, onProveedorEdit
       form.correo.trim() &&
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo.trim())
     ) {
-      e.correo = 'El correo no tiene un formato valido.';
+      e.correo = 'El correo no tiene un formato válido.';
     }
     return e;
   }
@@ -136,7 +136,7 @@ export default function EditProveedorModal({ proveedor, onClose, onProveedorEdit
         </div>
 
         <div className="col-sm-6">
-          <label className="form-label fw-semibold">Telefono</label>
+          <label className="form-label fw-semibold">Teléfono</label>
           <input
             type="text"
             className="form-control"
@@ -158,7 +158,7 @@ export default function EditProveedorModal({ proveedor, onClose, onProveedorEdit
         </div>
 
         <div className="col-12">
-          <label className="form-label fw-semibold">Direccion</label>
+          <label className="form-label fw-semibold">Dirección</label>
           <input
             type="text"
             className="form-control"

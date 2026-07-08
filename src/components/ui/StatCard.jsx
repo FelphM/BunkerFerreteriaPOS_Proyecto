@@ -9,7 +9,7 @@
  * @param {string} icono      Clase de Bootstrap Icon.
  * @param {string} [color]    Variante de color Bootstrap (primary, success,
  *                            warning, danger, info...). Default: 'secondary'.
- * @param {string} [subtitulo] Texto pequeno bajo el valor.
+ * @param {string} [subtitulo] Texto pequeño bajo el valor.
  * ---------------------------------------------------------------------------
  */
 export default function StatCard({

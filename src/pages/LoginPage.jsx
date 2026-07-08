@@ -1,14 +1,14 @@
 /**
  * LoginPage.jsx
  * ---------------------------------------------------------------------------
- * Pantalla de inicio de sesion de Ferromat S.A.
+ * Pantalla de inicio de sesión de Ferromat S.A.
  *
- * - Formulario de correo + contrasena.
+ * - Formulario de correo + contraseña.
  * - Llama a `signIn` del AuthContext (Supabase Auth).
- * - Muestra estado de carga, errores y exito.
+ * - Muestra estado de carga, errores y éxito.
  * - Redirige al POS ("/") tras el login exitoso.
- *   (La redireccion la maneja <ProtectedRoute> en App.jsx via `from`.)
- * - Diseno visual cohesivo con el sistema: usa la paleta naranja de Ferromat.
+ *   (La redirección la maneja <ProtectedRoute> en App.jsx via `from`.)
+ * - Diseño visual cohesivo con el sistema: usa la paleta naranja de Ferromat.
  * ---------------------------------------------------------------------------
  */
 import { useState } from 'react';
@@ -20,7 +20,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Si el usuario llego aqui desde una ruta protegida, volvemos a ella tras el login.
+  // Si el usuario llegó aquí desde una ruta protegida, volvemos a ella tras el login.
   const from = location.state?.from ?? '/';
 
   const [form, setForm] = useState({ email: '', password: '' });
@@ -32,10 +32,10 @@ export default function LoginPage() {
   };
 
   const handleSubmit = async (e) => {
-    // Siempre prevenimos el submit nativo, incluso si la validacion local falla.
+    // Siempre prevenimos el submit nativo, incluso si la validación local falla.
     e.preventDefault();
     // Leemos los valores directamente del DOM como fallback (por si el
-    // onChange de React no se disparo, ej: autocompletado del navegador).
+    // onChange de React no se disparó, ej: autocompletado del navegador).
     const emailVal = form.email || e.target.email?.value || '';
     const passVal = form.password || e.target.password?.value || '';
     if (!emailVal || !passVal) return;
@@ -57,16 +57,16 @@ export default function LoginPage() {
           <div className="fp-login-logo mx-auto mb-3">
             <i className="bi bi-wrench-adjustable-circle" />
           </div>
-          <h1 className="h3 fw-bold mb-0">Bunker Ferreteria</h1>
+          <h1 className="h3 fw-bold mb-0">Bunker Ferretería</h1>
           <p className="text-secondary mt-1 mb-0">Sistema de Punto de Venta</p>
         </div>
 
         {/* ----------------------- FORMULARIO --------------------------- */}
         <form onSubmit={handleSubmit} noValidate>
-          {/* Correo electronico */}
+          {/* Correo electrónico */}
           <div className="mb-3">
             <label htmlFor="email" className="form-label fw-semibold">
-              Correo electronico
+              Correo electrónico
             </label>
             <div className="input-group">
               <span className="input-group-text bg-white">
@@ -109,7 +109,7 @@ export default function LoginPage() {
                 required
                 disabled={loading}
               />
-              {/* Toggle mostrar / ocultar contrasena */}
+              {/* Toggle mostrar / ocultar contraseña */}
               <button
                 type="button"
                 className="input-group-text bg-white"
@@ -122,7 +122,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Mensaje de error de autenticacion */}
+          {/* Mensaje de error de autenticación */}
           {authError && (
             <div className="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3">
               <i className="bi bi-exclamation-circle-fill" />
@@ -130,7 +130,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Boton de ingreso */}
+          {/* Botón de ingreso */}
           <button
             type="submit"
             className="btn fp-btn-login w-100 py-3 fw-bold mt-2"
@@ -154,7 +154,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* -------------------- PIE DE PAGINA --------------------------- */}
+        {/* -------------------- PIE DE PÁGINA --------------------------- */}
         <p className="text-center text-secondary mt-4 mb-0 small">
           Si olvidaste tu contraseña, contacta al administrador del sistema.
         </p>

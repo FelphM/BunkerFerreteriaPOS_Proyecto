@@ -3,7 +3,7 @@
  * ---------------------------------------------------------------------------
  * Tarjeta de un item vendible dentro de la grilla del POS.
  * Click en la tarjeta → agrega al carrito.
- * Click en el icono de edicion → abre EditProductModal.
+ * Click en el icono de edición → abre EditProductModal.
  * ---------------------------------------------------------------------------
  */
 import { formatCLP, getStockStatus } from '../utils/format';
@@ -25,7 +25,7 @@ export default function ProductCard({ item, iconoCategoria, onAdd, onEdit }) {
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter' && !stock.agotado) onAdd(item); }}
     >
-      {/* Boton editar — esquina superior derecha */}
+      {/* Botón editar — esquina superior derecha */}
       <button
         type="button"
         className="btn btn-sm btn-light position-absolute top-0 end-0 m-1 p-1 lh-1 opacity-0 fp-edit-btn"

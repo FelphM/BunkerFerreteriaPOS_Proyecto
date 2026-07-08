@@ -88,7 +88,7 @@ export default function CotizacionesPage() {
   }
 
   const subtitulo =
-    modo === 'lista'   ? `${kpis.cantidad} cotizacion(es) guardadas`
+    modo === 'lista'   ? `${kpis.cantidad} cotización(es) guardadas`
     : modo === 'editar'  ? 'Editando cotización'
     : 'Detalle de cotización';
 

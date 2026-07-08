@@ -11,6 +11,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { getProductosPorCategoria } from '../data/queries';
 import { useQuery } from '../hooks/useQuery';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
@@ -56,6 +57,12 @@ export default function CategoriasPage() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [editandoIcono, setEditandoIcono] = useState(null); // { id, icono }
   const [editandoCategoria, setEditandoCategoria] = useState(null); // categoria completa
+  const [productosCategoria, setProductosCategoria] = useState(null); // { id, nombre } de la categoria elegida
+
+  const { data: productosDeCategoria = [], loading: cargandoProductos } = useQuery(
+    () => (productosCategoria ? getProductosPorCategoria(productosCategoria.id) : Promise.resolve([])),
+    [productosCategoria],
+  );
 
   const filtradas = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -97,19 +104,19 @@ export default function CategoriasPage() {
   return (
     <>
       <PageHeader
-        titulo="Categorias"
+        titulo="Categorías"
         icono="bi-tags"
-        descripcion={`${categorias.length} categorias registradas`}
+        descripcion={`${categorias.length} categorías registradas`}
       >
         <button type="button" className="btn fp-btn-accent" onClick={() => setShowAdd(true)}>
-          <i className="bi bi-plus-lg me-1" />Nueva categoria
+          <i className="bi bi-plus-lg me-1" />Nueva categoría
         </button>
       </PageHeader>
 
       <div className="fp-page-body">
         <div className="row g-3 mb-3">
           <div className="col-sm-6 col-xl-4">
-            <StatCard titulo="Categorias" valor={categorias.length} icono="bi-tags" color="primary" />
+            <StatCard titulo="Categorías" valor={categorias.length} icono="bi-tags" color="primary" />
           </div>
           <div className="col-sm-6 col-xl-4">
             <StatCard titulo="Productos categorizados" valor={totalProductos} icono="bi-box-seam" color="info" />
@@ -123,7 +130,7 @@ export default function CategoriasPage() {
               <input
                 type="text"
                 className="form-control"
-                placeholder="Buscar categoria..."
+                placeholder="Buscar categoría..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
@@ -136,8 +143,8 @@ export default function CategoriasPage() {
               <thead className="table-light">
                 <tr>
                   <th style={{ width: 56 }}>Icono</th>
-                  <th>Categoria</th>
-                  <th>Descripcion</th>
+                  <th>Categoría</th>
+                  <th>Descripción</th>
                   <th className="text-center">Productos</th>
                   <th />
                   <th />
@@ -147,7 +154,7 @@ export default function CategoriasPage() {
                 {filtradas.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="text-center text-secondary py-4">
-                      Sin categorias para la busqueda actual.
+                      Sin categorías para la búsqueda actual.
                     </td>
                   </tr>
                 ) : (
@@ -168,13 +175,24 @@ export default function CategoriasPage() {
                         {cat.descripcion || <span className="text-muted">—</span>}
                       </td>
                       <td className="text-center">
-                        <span className="badge bg-secondary">{cat.productos_count}</span>
+                        {cat.productos_count > 0 ? (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-link p-0 text-decoration-none"
+                            title="Ver productos de la categoría"
+                            onClick={() => setProductosCategoria({ id: cat.id, nombre: cat.nombre })}
+                          >
+                            <span className="badge bg-secondary">{cat.productos_count}</span>
+                          </button>
+                        ) : (
+                          <span className="badge bg-secondary">{cat.productos_count}</span>
+                        )}
                       </td>
                       <td className="text-end">
                         <button
                           type="button"
                           className="btn btn-sm btn-outline-primary"
-                          title="Editar categoria"
+                          title="Editar categoría"
                           onClick={() => setEditandoCategoria(cat)}
                         >
                           <i className="bi bi-pencil" />
@@ -201,7 +219,7 @@ export default function CategoriasPage() {
           {categorias.some((c) => c.productos_count > 0) && (
             <div className="card-footer bg-white text-secondary small">
               <i className="bi bi-info-circle me-1" />
-              Las categorias con productos no se pueden eliminar. Reasigna sus productos primero desde Inventario.
+              Las categorías con productos no se pueden eliminar. Reasigna sus productos primero desde Inventario.
             </div>
           )}
         </div>
@@ -234,7 +252,7 @@ export default function CategoriasPage() {
       <Modal
         show={!!confirmDelete}
         onClose={() => setConfirmDelete(null)}
-        titulo="Eliminar categoria"
+        titulo="Eliminar categoría"
         icono="bi-exclamation-triangle"
         size="sm"
         footer={
@@ -249,12 +267,54 @@ export default function CategoriasPage() {
         }
       >
         <p className="mb-1">
-          La categoria <strong>{confirmDelete?.nombre}</strong> tiene{' '}
+          La categoría <strong>{confirmDelete?.nombre}</strong> tiene{' '}
           <strong>{confirmDelete?.productos_count} producto(s)</strong> asociados.
         </p>
         <p className="text-muted small mb-0">
-          Si la eliminas, esos productos quedarán sin categoria. ¿Continuar?
+          Si la eliminas, esos productos quedarán sin categoría. ¿Continuar?
         </p>
+      </Modal>
+
+      {/* Modal: productos de la categoría */}
+      <Modal
+        show={!!productosCategoria}
+        onClose={() => setProductosCategoria(null)}
+        titulo={productosCategoria ? `Productos en ${productosCategoria.nombre}` : ''}
+        icono="bi-box-seam"
+        size="lg"
+      >
+        {cargandoProductos ? (
+          <div className="text-center py-4 text-secondary">
+            <span className="spinner-border spinner-border-sm me-2" />Cargando...
+          </div>
+        ) : productosDeCategoria.length === 0 ? (
+          <p className="text-secondary text-center m-0 py-3">Esta categoría no tiene productos asignados.</p>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-sm table-hover align-middle m-0">
+              <thead className="table-light">
+                <tr>
+                  <th>Producto</th>
+                  <th>Código interno</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {productosDeCategoria.map((p) => (
+                  <tr key={p.id}>
+                    <td className="fw-semibold">{p.nombre}</td>
+                    <td className="text-secondary">{p.codigo_interno || '-'}</td>
+                    <td>
+                      <span className={`badge bg-${p.activo ? 'success' : 'secondary'}`}>
+                        {p.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Modal>
     </>
   );
@@ -290,7 +350,7 @@ function AddCategoriaModal({ show, onClose, onCreada }) {
       handleClose();
     } catch (err) {
       if (err.message.includes('unique') || err.message.includes('categorias_nombre_key')) {
-        setErrores({ nombre: 'Ya existe una categoria con ese nombre.' });
+        setErrores({ nombre: 'Ya existe una categoría con ese nombre.' });
       } else {
         setErrorGlobal(err.message);
       }
@@ -319,7 +379,7 @@ function AddCategoriaModal({ show, onClose, onCreada }) {
 
   return (
     <>
-      <Modal show={show} onClose={handleClose} titulo="Nueva categoria" icono="bi-tags" footer={footer}>
+      <Modal show={show} onClose={handleClose} titulo="Nueva categoría" icono="bi-tags" footer={footer}>
         {errorGlobal && (
           <div className="alert alert-danger py-2 mb-3">
             <i className="bi bi-exclamation-triangle me-2" />{errorGlobal}
@@ -339,11 +399,11 @@ function AddCategoriaModal({ show, onClose, onCreada }) {
             {errores.nombre && <div className="invalid-feedback">{errores.nombre}</div>}
           </div>
           <div className="col-12">
-            <label className="form-label fw-semibold">Descripcion</label>
+            <label className="form-label fw-semibold">Descripción</label>
             <textarea
               className="form-control"
               rows={2}
-              placeholder="Descripcion opcional..."
+              placeholder="Descripción opcional..."
               value={form.descripcion}
               onChange={(e) => set('descripcion', e.target.value)}
             />
@@ -479,7 +539,7 @@ function EditCategoriaModal({ categoria, onClose, onGuardada }) {
       handleClose();
     } catch (err) {
       if (err.message.includes('unique') || err.message.includes('categorias_nombre_key')) {
-        setErrores({ nombre: 'Ya existe una categoria con ese nombre.' });
+        setErrores({ nombre: 'Ya existe una categoría con ese nombre.' });
       } else {
         setErrorGlobal(err.message);
       }
@@ -511,7 +571,7 @@ function EditCategoriaModal({ categoria, onClose, onGuardada }) {
 
   return (
     <>
-      <Modal show={show} onClose={handleClose} titulo="Editar categoria" icono="bi-pencil-square" footer={footer}>
+      <Modal show={show} onClose={handleClose} titulo="Editar categoría" icono="bi-pencil-square" footer={footer}>
         {errorGlobal && (
           <div className="alert alert-danger py-2 mb-3">
             <i className="bi bi-exclamation-triangle me-2" />{errorGlobal}
@@ -530,11 +590,11 @@ function EditCategoriaModal({ categoria, onClose, onGuardada }) {
             {errores.nombre && <div className="invalid-feedback">{errores.nombre}</div>}
           </div>
           <div className="col-12">
-            <label className="form-label fw-semibold">Descripcion</label>
+            <label className="form-label fw-semibold">Descripción</label>
             <textarea
               className="form-control"
               rows={2}
-              placeholder="Descripcion opcional..."
+              placeholder="Descripción opcional..."
               value={form.descripcion}
               onChange={(e) => set('descripcion', e.target.value)}
             />

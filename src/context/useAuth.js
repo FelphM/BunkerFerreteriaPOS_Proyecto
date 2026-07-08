@@ -5,7 +5,7 @@
  * react-refresh/only-export-components (solo puede haber componentes en un
  * archivo que exporte componentes React).
  *
- * Importar siempre desde aqui, no desde AuthContext.jsx directamente.
+ * Importar siempre desde aquí, no desde AuthContext.jsx directamente.
  *
  * @example
  * import { useAuth } from '../context/useAuth';

@@ -7,7 +7,7 @@
  * Props:
  *   item       {object}   Objeto con id (variante) e id_producto
  *   onClose    {Function}
- *   onGuardado {Function} Callback para refrescar el catalogo
+ *   onGuardado {Function} Callback para refrescar el catálogo
  * ---------------------------------------------------------------------------
  */
 import { useEffect, useMemo, useState } from 'react';
@@ -117,7 +117,7 @@ export default function EditProductModal({ item, onClose, onGuardado }) {
       setNuevaCatNombre('');
       setShowNuevaCat(false);
     } catch (err) {
-      console.error('Error creando categoria:', err.message);
+      console.error('Error creando categoría:', err.message);
     } finally {
       setCreandoCat(false);
     }
@@ -228,18 +228,18 @@ export default function EditProductModal({ item, onClose, onGuardado }) {
                   value={prod.nombre} onChange={(e) => setProd((p) => ({ ...p, nombre: e.target.value }))} />
               </div>
               <div className="col-12">
-                <label className="form-label fw-semibold">Descripcion</label>
+                <label className="form-label fw-semibold">Descripción</label>
                 <textarea className="form-control" rows={2}
                   value={prod.descripcion} onChange={(e) => setProd((p) => ({ ...p, descripcion: e.target.value }))} />
               </div>
 
-              {/* Categoria con quick-add */}
+              {/* Categoría con quick-add */}
               <div className="col-md-6">
-                <label className="form-label fw-semibold">Categoria</label>
+                <label className="form-label fw-semibold">Categoría</label>
                 <div className="d-flex gap-2">
                   <select className="form-select" value={prod.categoria_id}
                     onChange={(e) => setProd((p) => ({ ...p, categoria_id: e.target.value }))}>
-                    <option value="">— Sin categoria —</option>
+                    <option value="">— Sin categoría —</option>
                     {categorias.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                   </select>
                   <button type="button" className="btn btn-outline-secondary flex-shrink-0"
@@ -289,7 +289,7 @@ export default function EditProductModal({ item, onClose, onGuardado }) {
               </div>
 
               <div className="col-md-6">
-                <label className="form-label fw-semibold">Codigo interno (SKU)</label>
+                <label className="form-label fw-semibold">Código interno (SKU)</label>
                 <input type="text" className="form-control"
                   value={prod.codigo_interno} onChange={(e) => setProd((p) => ({ ...p, codigo_interno: e.target.value }))} />
               </div>
@@ -313,12 +313,12 @@ export default function EditProductModal({ item, onClose, onGuardado }) {
                 </select>
               </div>
               <div className="col-md-6">
-                <label className="form-label fw-semibold">Codigo de barras</label>
+                <label className="form-label fw-semibold">Código de barras</label>
                 <input type="text" className="form-control"
                   value={vari.codigo_barras} onChange={(e) => setVari((v) => ({ ...v, codigo_barras: e.target.value }))} />
               </div>
               <div className="col-md-6">
-                <label className="form-label fw-semibold">Stock minimo (alerta)</label>
+                <label className="form-label fw-semibold">Stock mínimo (alerta)</label>
                 <input type="number" className="form-control" min="0"
                   value={vari.stock_minimo} onChange={(e) => setVari((v) => ({ ...v, stock_minimo: e.target.value }))} />
               </div>

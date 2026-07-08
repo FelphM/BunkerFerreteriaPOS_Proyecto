@@ -4,12 +4,12 @@
  * Instancia SINGLETON del cliente de Supabase.
  *
  * Todo el sistema importa este archivo para acceder a la API de Supabase:
- * autenticacion, queries a tablas, RPC, realtime, etc.
+ * autenticación, queries a tablas, RPC, realtime, etc.
  *
  * Las credenciales se leen desde las variables de entorno de Vite (.env.local).
- * Nunca deben estar hardcodeadas en el codigo fuente.
+ * Nunca deben estar hardcodeadas en el código fuente.
  *
- * CONFIGURACION (ver .env.local):
+ * CONFIGURACIÓN (ver .env.local):
  *   VITE_SUPABASE_URL      -> Project URL (Settings -> API)
  *   VITE_SUPABASE_ANON_KEY -> anon public key (Settings -> API)
  * ---------------------------------------------------------------------------
@@ -30,14 +30,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 /**
  * Cliente de Supabase.
- * Gestiona la sesion del usuario en localStorage automaticamente.
+ * Gestiona la sesión del usuario en localStorage automáticamente.
  * Usar `supabase.auth`, `supabase.from()`, `supabase.rpc()`, etc.
  */
 export const supabase = createClient(supabaseUrl ?? '', supabaseAnonKey ?? '', {
   auth: {
-    // Guarda la sesion en localStorage para que sobreviva recargas de pagina.
+    // Guarda la sesión en localStorage para que sobreviva recargas de página.
     persistSession: true,
-    // Refresca el token automaticamente antes de que expire.
+    // Refresca el token automáticamente antes de que expire.
     autoRefreshToken: true,
     // Detecta el token en la URL (necesario para magic links y OAuth callbacks).
     detectSessionInUrl: true,

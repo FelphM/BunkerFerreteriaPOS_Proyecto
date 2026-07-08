@@ -1,10 +1,10 @@
 /**
  * ComprasPage.jsx
  * ---------------------------------------------------------------------------
- * Ordenes de compra a proveedores: listado con filtro por estado y proveedor,
+ * Órdenes de compra a proveedores: listado con filtro por estado y proveedor,
  * indicadores y modal con el detalle de cada compra.
  *
- * Estados (segun esquema): PENDIENTE (DEFAULT), CONFIRMADA, ANULADA.
+ * Estados (según esquema): PENDIENTE (DEFAULT), CONFIRMADA, ANULADA.
  * ---------------------------------------------------------------------------
  */
 import { useMemo, useState } from 'react';
@@ -17,7 +17,7 @@ import StatCard from '../components/ui/StatCard';
 import Modal from '../components/ui/Modal';
 import AddCompraModal from '../components/AddCompraModal';
 
-// Color del badge segun estado de la compra.
+// Color del badge según estado de la compra.
 const COLOR_ESTADO = {
   PENDIENTE: 'warning',
   CONFIRMADA: 'success',
@@ -82,7 +82,7 @@ export default function ComprasPage() {
       <PageHeader
         titulo="Compras"
         icono="bi-bag"
-        descripcion={`${compras.length} ordenes de compra`}
+        descripcion={`${compras.length} órdenes de compra`}
       >
         <button
           type="button"
@@ -98,7 +98,7 @@ export default function ComprasPage() {
         <div className="row g-3 mb-3">
           <div className="col-sm-6 col-xl-3">
             <StatCard
-              titulo="Ordenes totales"
+              titulo="Órdenes totales"
               valor={kpis.total}
               icono="bi-bag-check"
               color="primary"

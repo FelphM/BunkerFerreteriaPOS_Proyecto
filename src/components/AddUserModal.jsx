@@ -91,8 +91,8 @@ export default function AddUserModal({ show, onClose, onUserCreated }) {
           if (e.target === e.currentTarget && !guardando) onClose();
         }}
       >
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
+        <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+          <form className="modal-content" onSubmit={handleGuardar}>
             <div className="modal-header">
               <h5 className="modal-title">
                 <i className="bi bi-person-plus me-2 text-accent" />
@@ -105,7 +105,6 @@ export default function AddUserModal({ show, onClose, onUserCreated }) {
                 disabled={guardando}
               />
             </div>
-            <form onSubmit={handleGuardar}>
               <div className="modal-body">
                 {error && (
                   <div className="alert alert-danger py-2">
@@ -185,8 +184,7 @@ export default function AddUserModal({ show, onClose, onUserCreated }) {
                   )}
                 </button>
               </div>
-            </form>
-          </div>
+          </form>
         </div>
       </div>
       <div className="modal-backdrop fade show" />

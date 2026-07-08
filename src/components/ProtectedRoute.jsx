@@ -4,12 +4,12 @@
  * Guardia de rutas privadas del sistema.
  *
  * Comportamiento:
- *   - Mientras Supabase inicializa la sesion (`loading = true`): muestra un
+ *   - Mientras Supabase inicializa la sesión (`loading = true`): muestra un
  *     splash de carga para evitar el "flash" de la pantalla de login.
- *   - Si el usuario NO esta autenticado: redirige a `/login`, guardando la
+ *   - Si el usuario NO está autenticado: redirige a `/login`, guardando la
  *     ruta original en `location.state.from` para redirigir de vuelta tras
  *     el login exitoso.
- *   - Si el usuario SI esta autenticado: renderiza el `<Outlet />` (las rutas
+ *   - Si el usuario SÍ está autenticado: renderiza el `<Outlet />` (las rutas
  *     hijas del layout).
  *   - (Opcional) Si el perfil del usuario tiene `activo = false`: muestra
  *     un mensaje de cuenta desactivada en lugar del sistema.
@@ -29,7 +29,7 @@ export default function ProtectedRoute() {
   const { isAuthenticated, loading, perfil } = useAuth();
   const location = useLocation();
 
-  // ----- 1. Carga inicial: esperamos a que Supabase resuelva la sesion -----
+  // ----- 1. Carga inicial: esperamos a que Supabase resuelva la sesión -----
   if (loading) {
     return (
       <div
@@ -46,13 +46,13 @@ export default function ProtectedRoute() {
             role="status"
             aria-hidden="true"
           />
-          Cargando Bunker Ferreteria...
+          Cargando Bunker Ferretería...
         </div>
       </div>
     );
   }
 
-  // ----- 2. Sin sesion: redirigir al login --------------------------------
+  // ----- 2. Sin sesión: redirigir al login --------------------------------
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }

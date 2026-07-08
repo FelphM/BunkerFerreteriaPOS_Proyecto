@@ -1,8 +1,8 @@
 /**
  * BajoStockModal.jsx
  * ---------------------------------------------------------------------------
- * Modal de notificacion de bajo stock: lista las variantes cuyo stock_actual
- * es menor o igual a su stock_minimo.
+ * Modal de notificación de bajo stock: lista las variantes cuyo stock_actual
+ * es menor o igual a su stock_mínimo.
  *
  * Props:
  *   show        {boolean}   Visibilidad.
@@ -24,14 +24,14 @@ export default function BajoStockModal({ show, onClose, productos = [] }) {
       {productos.length === 0 ? (
         <div className="text-center text-muted py-5">
           <i className="bi bi-check-circle fs-1 d-block mb-2 text-success opacity-75" />
-          <p className="mb-0 fw-semibold">Todo el inventario esta en orden.</p>
-          <small>No hay productos por debajo del stock minimo.</small>
+          <p className="mb-0 fw-semibold">Todo el inventario está en orden.</p>
+          <small>No hay productos por debajo del stock mínimo.</small>
         </div>
       ) : (
         <>
           <div className="alert alert-warning py-2 mb-3 small">
             <i className="bi bi-exclamation-triangle-fill me-2" />
-            <strong>{productos.length} producto(s)</strong> con stock igual o por debajo del minimo.
+            <strong>{productos.length} producto(s)</strong> con stock igual o por debajo del mínimo.
           </div>
           <div className="table-responsive">
             <table className="table table-hover table-sm align-middle mb-0">
@@ -40,7 +40,7 @@ export default function BajoStockModal({ show, onClose, productos = [] }) {
                   <th>Producto</th>
                   <th>Variante</th>
                   <th className="text-center">Stock actual</th>
-                  <th className="text-center">Stock minimo</th>
+                  <th className="text-center">Stock mínimo</th>
                   <th>Proveedor</th>
                 </tr>
               </thead>

@@ -1,11 +1,11 @@
 /**
  * ProductGrid.jsx
  * ---------------------------------------------------------------------------
- * PANEL CENTRAL del POS: catalogo de productos.
- *   - Pestanas de categoria.
- *   - Grilla de <ProductCard /> filtrada por categoria + buscador.
+ * PANEL CENTRAL del POS: catálogo de productos.
+ *   - Pestañas de categoría.
+ *   - Grilla de <ProductCard /> filtrada por categoría + buscador.
  *
- * Las categorias y los items llegan ya cargados desde Supabase (via PosPage).
+ * Las categorías y los items llegan ya cargados desde Supabase (via PosPage).
  * ---------------------------------------------------------------------------
  */
 import { useMemo, useState } from 'react';
@@ -37,14 +37,14 @@ export default function ProductGrid({ items, categorias = [], query, onAddItem, 
     return (
       <section className="fp-product-grid card border-0 shadow-sm h-100 d-flex align-items-center justify-content-center text-secondary">
         <span className="spinner-border me-2" />
-        Cargando catalogo...
+        Cargando catálogo...
       </section>
     );
   }
 
   return (
     <section className="fp-product-grid card border-0 shadow-sm h-100 d-flex flex-column">
-      {/* Pestanas de categoria */}
+      {/* Pestañas de categoría */}
       <div className="card-header bg-white border-bottom-0 pb-0">
         <div className="d-flex flex-wrap gap-2">
           <button

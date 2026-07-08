@@ -4,14 +4,14 @@
  * Base de datos local Dexie (IndexedDB) para operaciones offline.
  *
  * Tablas:
- *   ventas_pendientes  - Ventas capturadas sin conexion, pendientes de sync.
+ *   ventas_pendientes  - Ventas capturadas sin conexión, pendientes de sync.
  *
  * Esquema de cada venta_pendiente:
  *   {
  *     id          (auto),
  *     creado_en   ISO string,
  *     intentos    number,
- *     error       string | null,    // ultimo error de sync
+ *     error       string | null,    // último error de sync
  *     datos: {
  *       nombreCliente, rutCliente, correoCliente, metodoPago, observaciones,
  *       lineas: [{ variante_id, cantidad, precio_unitario }],

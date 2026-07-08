@@ -1,7 +1,7 @@
 /**
  * useQuery.js
  * ---------------------------------------------------------------------------
- * Mini-hook generico para llamadas async a `queries.js`.
+ * Mini-hook genérico para llamadas async a `queries.js`.
  *
  * Devuelve: { data, loading, error, refetch }
  *
@@ -13,7 +13,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
- * @param {() => Promise<any>} queryFn  Funcion async que devuelve los datos.
+ * @param {() => Promise<any>} queryFn  Función async que devuelve los datos.
  * @param {any[]} [deps=[]]             Dependencias extra (como useEffect).
  */
 export function useQuery(queryFn, deps = []) {
@@ -45,12 +45,12 @@ export function useQuery(queryFn, deps = []) {
   // Se re-ejecuta cuando cambian las deps pasadas por el caller.
   // `ejecutar` es estable (useCallback con []), por lo que incluirlo
   // no causa loops infinitos. La llamada se hace en un setTimeout(0) para
-  // que React no la considere una actualizacion sincrona dentro del efecto.
+  // que React no la considere una actualización síncrona dentro del efecto.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const id = setTimeout(() => ejecutar(), 0);
     return () => clearTimeout(id);
-  }, [...deps, ejecutar]); // deps es un array spread, eslint no lo analiza estaticamente
+  }, [...deps, ejecutar]); // deps es un array spread, eslint no lo analiza estáticamente
 
   return { data, loading, error, refetch: ejecutar };
 }

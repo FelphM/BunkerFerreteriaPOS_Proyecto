@@ -11,14 +11,14 @@
  * el desincronismo entre el estado de React y el ciclo de eventos del modal,
  * y mantiene el componente 100% declarativo.
  *
- * Cierre: boton X / boton Cerrar / tecla ESC / clic en el backdrop.
+ * Cierre: botón X / botón Cerrar / tecla ESC / clic en el backdrop.
  * ---------------------------------------------------------------------------
  */
 import { useEffect } from 'react';
 import { formatCLP, safeQty } from '../utils/format';
 
 export default function HeldSalesModal({ show, onClose, heldSales, onRecover }) {
-  // Cierre con tecla ESC + bloqueo de scroll del body mientras esta abierto.
+  // Cierre con tecla ESC + bloqueo de scroll del body mientras está abierto.
   useEffect(() => {
     if (!show) return undefined;
 

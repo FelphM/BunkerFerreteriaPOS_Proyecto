@@ -4,30 +4,30 @@
  * Base de datos SIMULADA del sistema Ferromat S.A.
  *
  * Cada arreglo de este archivo equivale 1:1 a una tabla del esquema SQL de
- * produccion (ver script maestro de Supabase). Los nombres de columna,
- * relaciones y restricciones se respetan para que la migracion a Supabase
+ * producción (ver script maestro de Supabase). Los nombres de columna,
+ * relaciones y restricciones se respetan para que la migración a Supabase
  * consista solo en reemplazar las funciones de `queries.js`.
  *
- * EQUIPO (Vicente Munoz / Vicente Varela):
- *  - Los `id` aqui son strings legibles (ej: 'prod-1'). En Supabase seran
+ * EQUIPO (Vicente Muñoz / Vicente Varela):
+ *  - Los `id` aquí son strings legibles (ej: 'prod-1'). En Supabase serán
  *    UUID reales generados por `gen_random_uuid()`.
  *  - Las columnas GENERATED del esquema (`precio_venta`, `subtotal`) y los
- *    totales que mantienen los triggers se calculan aqui en el "builder"
+ *    totales que mantienen los triggers se calculan aquí en el "builder"
  *    del final del archivo, para que el dato mock sea siempre consistente.
  *  - `categorias.icono` es un campo SOLO-UI (no existe en el esquema); se usa
  *    para pintar iconos de Bootstrap y puede ignorarse en la BD real.
  * ---------------------------------------------------------------------------
  */
 
-// --- Utilidades internas de generacion -------------------------------------
+// --- Utilidades internas de generación -------------------------------------
 const AHORA = new Date();
 /** ISO string de hace `dias` (y opcionalmente `horas`), relativo a hoy. */
 const hace = (dias, horas = 0) =>
   new Date(AHORA.getTime() - dias * 86400000 - horas * 3600000).toISOString();
 /**
- * ISO string anclado al DIA DE HOY a una hora fija. Se usa para las ventas
+ * ISO string anclado al DÍA DE HOY a una hora fija. Se usa para las ventas
  * "de hoy" para que el KPI funcione sin importar la hora a la que se abra
- * el sistema (restar horas a `AHORA` podria cruzar la medianoche).
+ * el sistema (restar horas a `AHORA` podría cruzar la medianoche).
  */
 const hoyALas = (hora, minuto = 0) => {
   const d = new Date(AHORA);
@@ -247,7 +247,7 @@ const detalle_compras = [
 
 // ===========================================================================
 // TABLA: movimientos_inventario
-// Dataset representativo de la bitacora de stock (en produccion lo generan
+// Dataset representativo de la bitácora de stock (en producción lo generan
 // los triggers de ventas y compras). Los stock_anterior/nuevo son ilustrativos.
 // ===========================================================================
 const movimientos_inventario = [
@@ -331,8 +331,8 @@ compras.forEach((c) => {
 });
 
 /**
- * Objeto que agrupa todas las "tablas". `queries.js` lee desde aqui;
- * ningun componente debe importar `db` directamente.
+ * Objeto que agrupa todas las "tablas". `queries.js` lee desde aquí;
+ * ningún componente debe importar `db` directamente.
  */
 export const db = {
   categorias,

@@ -2,12 +2,13 @@
  * AddClienteModal.jsx
  * ---------------------------------------------------------------------------
  * Formulario para registrar un nuevo cliente en la tabla `clientes` de Supabase.
- * Campos: nombre (requerido), rut (único), giro, telefono, correo, direccion.
+ * Campos: nombre (requerido), rut (único), giro, teléfono, correo, dirección.
  * ---------------------------------------------------------------------------
  */
 import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import Modal from './ui/Modal';
+import { formatearRut, validarRut } from '../utils/rut';
 
 const VACIO = {
   nombre: '',
@@ -33,8 +34,11 @@ export default function AddClienteModal({ show, onClose, onClienteCreado }) {
   function validar() {
     const e = {};
     if (!form.nombre.trim()) e.nombre = 'El nombre es obligatorio.';
+    if (form.rut.trim() && !validarRut(form.rut)) {
+      e.rut = 'El RUT ingresado no es válido.';
+    }
     if (form.correo.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo.trim())) {
-      e.correo = 'El correo no tiene un formato valido.';
+      e.correo = 'El correo no tiene un formato válido.';
     }
     return e;
   }
@@ -46,21 +50,21 @@ export default function AddClienteModal({ show, onClose, onClienteCreado }) {
     setGuardando(true);
     setErrorGlobal(null);
     try {
-      const { error } = await supabase.from('clientes').insert({
+      const { data, error } = await supabase.from('clientes').insert({
         nombre: form.nombre.trim(),
         rut: form.rut.trim() || null,
         giro: form.giro.trim() || null,
         correo: form.correo.trim() || null,
         telefono: form.telefono.trim() || null,
         direccion: form.direccion.trim() || null,
-      });
+      }).select().single();
       if (error) throw new Error(error.message);
-      onClienteCreado?.();
+      onClienteCreado?.(data);
       handleClose();
     } catch (err) {
-      // RUT duplicado es el error mas comun
+      // RUT duplicado es el error más común
       if (err.message.includes('clientes_rut_key') || err.message.includes('unique')) {
-        setErrores({ rut: 'Este RUT ya esta registrado.' });
+        setErrores({ rut: 'Este RUT ya está registrado.' });
       } else {
         setErrorGlobal(err.message);
       }
@@ -137,7 +141,8 @@ export default function AddClienteModal({ show, onClose, onClienteCreado }) {
             className={`form-control ${errores.rut ? 'is-invalid' : ''}`}
             placeholder="12.345.678-9"
             value={form.rut}
-            onChange={(e) => set('rut', e.target.value)}
+            onChange={(e) => set('rut', formatearRut(e.target.value))}
+            maxLength={12}
           />
           {errores.rut && <div className="invalid-feedback">{errores.rut}</div>}
         </div>
@@ -146,15 +151,15 @@ export default function AddClienteModal({ show, onClose, onClienteCreado }) {
           <input
             type="text"
             className="form-control"
-            placeholder="Construccion, Mineria, etc."
+            placeholder="Construcción, Minería, etc."
             value={form.giro}
             onChange={(e) => set('giro', e.target.value)}
           />
         </div>
 
-        {/* Telefono + Correo */}
+        {/* Teléfono + Correo */}
         <div className="col-sm-6">
-          <label className="form-label fw-semibold">Telefono</label>
+          <label className="form-label fw-semibold">Teléfono</label>
           <input
             type="text"
             className="form-control"
@@ -175,9 +180,9 @@ export default function AddClienteModal({ show, onClose, onClienteCreado }) {
           {errores.correo && <div className="invalid-feedback">{errores.correo}</div>}
         </div>
 
-        {/* Direccion */}
+        {/* Dirección */}
         <div className="col-12">
-          <label className="form-label fw-semibold">Direccion</label>
+          <label className="form-label fw-semibold">Dirección</label>
           <input
             type="text"
             className="form-control"

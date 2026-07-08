@@ -1,21 +1,23 @@
 /**
  * AppLayout.jsx
  * ---------------------------------------------------------------------------
- * Cascaron (shell) de la aplicacion: combina el <Sidebar /> plegable con el
- * area de contenido. El <Outlet /> de react-router-dom renderiza la vista
+ * Cascarón (shell) de la aplicación: combina el <Sidebar /> plegable con el
+ * área de contenido. El <Outlet /> de react-router-dom renderiza la vista
  * activa.
  *
  * Estados de sidebar:
  *   - Desktop (≥768px): visible, puede colapsarse a modo icono.
- *   - Mobil  (<768px):  oculto por defecto, se abre como panel superpuesto.
+ *   - Móvil  (<768px):  oculto por defecto, se abre como panel superpuesto.
  * ---------------------------------------------------------------------------
  */
 import { useState, useEffect, useCallback } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { supabase } from '../lib/supabaseClient';
+import { getConfigNumero } from '../data/queries';
 
 export default function AppLayout() {
+  const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [itemsCriticos, setItemsCriticos] = useState(0);
@@ -56,8 +58,7 @@ export default function AppLayout() {
   }, []);
 
   const verificarFacturas = useCallback(async () => {
-    const saved = localStorage.getItem('fp_dias_alerta');
-    const diasAlerta = saved ? Math.max(1, Math.min(90, Number(saved))) : 7;
+    const diasAlerta = (await getConfigNumero('dias_alerta_vencimiento')) || 7;
 
     const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
     const limite = new Date(hoy); limite.setDate(limite.getDate() + diasAlerta);
@@ -66,8 +67,8 @@ export default function AppLayout() {
     const { count, error } = await supabase
       .from('facturas_proveedores')
       .select('*', { count: 'exact', head: true })
-      .neq('estado_pago', 'PAGADA')
-      .neq('estado_pago', 'ANULADA')
+      .neq('estado_pago', 'pagada')
+      .neq('estado_pago', 'anulada')
       .not('fecha_vencimiento', 'is', null)
       .lte('fecha_vencimiento', limiteStr);
 
@@ -90,9 +91,15 @@ export default function AppLayout() {
     };
   }, [verificarFacturas]);
 
+  // Recalcula al cambiar de vista (AppLayout no se desmonta entre rutas,
+  // así que esto es lo que garantiza ver el número al día sin recargar).
+  useEffect(() => {
+    verificarFacturas();
+  }, [location.pathname, verificarFacturas]);
+
   return (
     <div className="fp-app d-flex vh-100 overflow-hidden">
-      {/* Overlay para cerrar sidebar en movil */}
+      {/* Overlay para cerrar sidebar en móvil */}
       {mobileSidebarOpen && (
         <div
           className="fp-sidebar-overlay"
@@ -109,7 +116,7 @@ export default function AppLayout() {
       />
 
       <main className="fp-content flex-grow-1 d-flex flex-column overflow-hidden">
-        {/* Barra superior solo visible en movil */}
+        {/* Barra superior solo visible en móvil */}
         <div className="fp-mobile-topbar">
           <button
             type="button"
@@ -119,7 +126,7 @@ export default function AppLayout() {
             <i className="bi bi-list fs-3" />
           </button>
           <i className="bi bi-wrench-adjustable-circle fs-4 text-warning ms-2 me-1" />
-          <span className="fw-bold text-white">Bunker Ferreteria</span>
+          <span className="fw-bold text-white">Bunker Ferretería</span>
         </div>
 
         <Outlet />
@@ -131,7 +138,7 @@ export default function AppLayout() {
             style={{
               bottom: '10px',
               right: '10px',
-              zIndex: 1100,
+              zIndex: 1040,
               maxWidth: '380px'
             }}
           >

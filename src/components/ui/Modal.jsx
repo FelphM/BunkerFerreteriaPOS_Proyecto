@@ -5,13 +5,13 @@
  * visibilidad la controla React (prop `show`). Evita el JS de Bootstrap para
  * no tener desincronismos de estado.
  *
- * Cierre: boton X / tecla ESC / clic en el backdrop.
+ * Cierre: botón X / tecla ESC / clic en el backdrop.
  *
- * @param {boolean}  show      Si el modal esta visible.
+ * @param {boolean}  show      Si el modal está visible.
  * @param {Function} onClose   Callback para cerrar.
- * @param {string}   titulo    Titulo del modal.
- * @param {string}   [icono]   Clase de Bootstrap Icon para el titulo.
- * @param {'sm'|'lg'|'xl'} [size] Tamano del dialog (Bootstrap modal-*).
+ * @param {string}   titulo    Título del modal.
+ * @param {string}   [icono]   Clase de Bootstrap Icon para el título.
+ * @param {'sm'|'lg'|'xl'} [size] Tamaño del dialog (Bootstrap modal-*).
  * @param {React.ReactNode} children Cuerpo del modal.
  * @param {React.ReactNode} [footer] Contenido del pie (botones).
  * ---------------------------------------------------------------------------
@@ -28,7 +28,7 @@ export default function Modal({
   footer,
   level = 1,
 }) {
-  // Cierre con ESC + bloqueo del scroll del body mientras esta abierto.
+  // Cierre con ESC + bloqueo del scroll del body mientras está abierto.
   useEffect(() => {
     if (!show) return undefined;
 

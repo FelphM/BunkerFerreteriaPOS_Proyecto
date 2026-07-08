@@ -1,12 +1,12 @@
 /**
  * format.js
  * ---------------------------------------------------------------------------
- * Utilidades de formato y reglas de presentacion compartidas por el POS.
+ * Utilidades de formato y reglas de presentación compartidas por el POS.
  * ---------------------------------------------------------------------------
  */
 
 /**
- * Formatea un numero como peso chileno (CLP), sin decimales.
+ * Formatea un número como peso chileno (CLP), sin decimales.
  * Ej: 8990 -> "$8.990"
  * @param {number} value
  * @returns {string}
@@ -19,7 +19,7 @@ export const formatCLP = (value) =>
   }).format(Number(value) || 0);
 
 /**
- * Normaliza una cantidad a numero seguro (>= 0).
+ * Normaliza una cantidad a número seguro (>= 0).
  * Acepta decimales (productos vendidos por metro/kilo).
  * @param {number|string} value
  * @returns {number}
@@ -30,8 +30,8 @@ export const safeQty = (value) => {
 };
 
 /**
- * Fecha larga en espanol para la barra superior, con la primera letra
- * en mayuscula. Ej: "Miercoles, 20 de mayo de 2026"
+ * Fecha larga en español para la barra superior, con la primera letra
+ * en mayúscula. Ej: "Miércoles, 20 de mayo de 2026"
  * @param {Date} [date=new Date()]
  * @returns {string}
  */
@@ -68,7 +68,7 @@ export const formatFechaHora = (value) => {
   })}`;
 };
 
-/** True si la fecha indicada cae en el dia de hoy. */
+/** True si la fecha indicada cae en el día de hoy. */
 export const esHoy = (value) => {
   const d = new Date(value);
   const hoy = new Date();
@@ -102,7 +102,7 @@ export const formatStock = (value) => {
 
 /**
  * Traduce el stock a un "estado" visual reutilizable.
- * El umbral de stock bajo podria venir de `configuracion` en produccion.
+ * El umbral de stock bajo podría venir de `configuracion` en producción.
  * @param {number} stock
  * @param {number} [umbralBajo=10]
  * @returns {{ texto: string, variante: string, agotado: boolean }}

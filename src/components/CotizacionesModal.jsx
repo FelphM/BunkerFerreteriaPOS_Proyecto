@@ -18,7 +18,7 @@ import { formatCLP } from '../utils/format';
 
 const LS_KEY = 'fp_cotizaciones';
 
-/** Lee las cotizaciones del localStorage ordenadas de mas reciente a mas antigua. */
+/** Lee las cotizaciones del localStorage ordenadas de más reciente a más antigua. */
 export function leerCotizaciones() {
   try {
     return JSON.parse(localStorage.getItem(LS_KEY) ?? '[]');
@@ -27,7 +27,7 @@ export function leerCotizaciones() {
   }
 }
 
-/** Guarda una nueva cotizacion y retorna el array actualizado. */
+/** Guarda una nueva cotización y retorna el array actualizado. */
 export function guardarCotizacion(cotizacion) {
   const lista = leerCotizaciones();
   const nueva = { ...cotizacion, id: Date.now() };
@@ -103,7 +103,7 @@ function ListaView({ lista, onVer, onEliminar }) {
       <div className="text-center text-muted py-5">
         <i className="bi bi-file-earmark-x fs-1 d-block mb-2 opacity-50" />
         <p className="mb-0">No hay cotizaciones guardadas.</p>
-        <small>Usa el boton &ldquo;Cotizar&rdquo; en el Punto de Venta.</small>
+        <small>Usa el botón &ldquo;Cotizar&rdquo; en el Punto de Venta.</small>
       </div>
     );
   }

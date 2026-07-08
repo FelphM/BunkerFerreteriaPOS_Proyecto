@@ -4,10 +4,10 @@
  * PANEL DERECHO: Cobro de la venta.
  *
  *   - Resumen destacado: Subtotal (neto), IVA y TOTAL.
- *   - Metodo de pago: Efectivo / Tarjeta / Transferencia.
- *   - Monto recibido + montos rapidos + calculo de vuelto (solo efectivo).
+ *   - Método de pago: Efectivo / Tarjeta / Transferencia.
+ *   - Monto recibido + montos rápidos + cálculo de vuelto (solo efectivo).
  *   - Cliente: campo con buscador autocomplete sobre la tabla `clientes`,
- *     incluye opcion para registrar un nuevo cliente.
+ *     incluye opción para registrar un nuevo cliente.
  *   - Notas de la venta.
  *   - Acciones: COBRAR (finaliza), APARTAR (deja en espera), COTIZAR.
  * ---------------------------------------------------------------------------
@@ -32,6 +32,7 @@ export default function CheckoutPanel({
   onChangeMontoRecibido,
   cliente,
   onChangeCliente,
+  onSeleccionarCliente,
   notas,
   onChangeNotas,
   hayItems,
@@ -64,7 +65,7 @@ export default function CheckoutPanel({
     return () => document.removeEventListener('mousedown', handler);
   }, [showDropdown]);
 
-  // Filtrar clientes segun lo que hay escrito en el campo
+  // Filtrar clientes según lo que hay escrito en el campo
   const clientesFiltrados = useMemo(() => {
     const q = cliente.trim().toLowerCase();
     if (!q) return clientes.slice(0, 8);
@@ -79,6 +80,7 @@ export default function CheckoutPanel({
 
   const handleSelectCliente = (c) => {
     onChangeCliente(c.nombre ?? '');
+    onSeleccionarCliente?.(c);
     setShowDropdown(false);
   };
 
@@ -104,7 +106,7 @@ export default function CheckoutPanel({
       {/* Cuerpo desplazable */}
       <div className="fp-checkout-body flex-grow-1 overflow-auto">
         {/* --------------------- METODO DE PAGO ------------------------ */}
-        <label className="fp-field-label">Metodo de pago</label>
+        <label className="fp-field-label">Método de pago</label>
         <div className="fp-pay-methods">
           {METODOS_PAGO.map((m) => (
             <button
@@ -176,7 +178,7 @@ export default function CheckoutPanel({
               id="cliente"
               type="text"
               className="form-control"
-              placeholder="Publico en general"
+              placeholder="Público en general"
               value={cliente}
               autoComplete="off"
               onChange={(e) => {
@@ -216,7 +218,7 @@ export default function CheckoutPanel({
                 <div className="fp-cliente-empty">Sin coincidencias</div>
               )}
 
-              {/* Opcion para registrar cliente nuevo */}
+              {/* Opción para registrar cliente nuevo */}
               <button
                 type="button"
                 className="fp-cliente-option fp-cliente-option-nuevo"

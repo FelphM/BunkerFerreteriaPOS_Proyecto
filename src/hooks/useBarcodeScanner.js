@@ -1,24 +1,24 @@
 /**
  * useBarcodeScanner.js
  * ---------------------------------------------------------------------------
- * Custom Hook que simula la lectura de una pistola de codigo de barras USB.
+ * Custom Hook que simula la lectura de una pistola de código de barras USB.
  *
- * Una pistola USB se comporta como un teclado: "teclea" los digitos del codigo
- * muy rapido (milisegundos entre pulsacion) y termina con un Enter.
- * Una persona escribe mucho mas lento.
+ * Una pistola USB se comporta como un teclado: "teclea" los dígitos del código
+ * muy rápido (milisegundos entre pulsación) y termina con un Enter.
+ * Una persona escribe mucho más lento.
  *
  * Estrategia:
- *  - Escuchamos `keydown` a nivel de window (funciona aunque el foco no este
+ *  - Escuchamos `keydown` a nivel de window (funciona aunque el foco no esté
  *    en el buscador, tal como ocurre con una pistola real).
  *  - Acumulamos caracteres en un buffer.
- *  - Si entre dos teclas pasa mas de `timeoutMs`, asumimos tipeo humano y
+ *  - Si entre dos teclas pasa más de `timeoutMs`, asumimos tipeo humano y
  *    reiniciamos el buffer.
  *  - Al recibir Enter, si el buffer supera `minLength`, disparamos `onScan`.
  *
- * @param {(code: string) => void} onScan  Callback con el codigo capturado.
+ * @param {(code: string) => void} onScan  Callback con el código capturado.
  * @param {object}  [options]
- * @param {number}  [options.minLength=3]  Largo minimo para considerar valido.
- * @param {number}  [options.timeoutMs=80] Ms maximos entre teclas de un escaner.
+ * @param {number}  [options.minLength=3]  Largo mínimo para considerar válido.
+ * @param {number}  [options.timeoutMs=80] Ms máximos entre teclas de un escáner.
  * @param {boolean} [options.enabled=true] Permite desactivar el listener.
  * ---------------------------------------------------------------------------
  */
@@ -44,14 +44,14 @@ export function useBarcodeScanner(onScan, options = {}) {
     const handleKeyDown = (event) => {
       const now = Date.now();
 
-      // Si paso demasiado tiempo desde la ultima tecla -> tipeo humano.
+      // Si pasó demasiado tiempo desde la última tecla -> tipeo humano.
       // Reiniciamos el buffer para no mezclar lecturas.
       if (now - lastKeyTimeRef.current > timeoutMs) {
         bufferRef.current = '';
       }
       lastKeyTimeRef.current = now;
 
-      // El escaner cierra la lectura con Enter.
+      // El escáner cierra la lectura con Enter.
       if (event.key === 'Enter') {
         const code = bufferRef.current;
         bufferRef.current = '';
@@ -61,7 +61,7 @@ export function useBarcodeScanner(onScan, options = {}) {
         return;
       }
 
-      // Solo nos interesan caracteres imprimibles (digitos/letras del codigo).
+      // Solo nos interesan caracteres imprimibles (dígitos/letras del código).
       if (event.key.length === 1) {
         bufferRef.current += event.key;
       }

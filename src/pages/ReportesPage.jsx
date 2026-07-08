@@ -4,10 +4,10 @@
  * Reportes: agregaciones calculadas en vivo sobre las ventas, el inventario
  * y los movimientos de stock.
  *
- *   - Ventas por metodo de pago.
- *   - Productos mas vendidos (por unidades).
- *   - Valor del inventario por categoria.
- *   - Ultimos movimientos de inventario.
+ *   - Ventas por método de pago.
+ *   - Productos más vendidos (por unidades).
+ *   - Valor del inventario por categoría.
+ *   - Últimos movimientos de inventario.
  * ---------------------------------------------------------------------------
  */
 import { useMemo } from 'react';
@@ -22,7 +22,7 @@ import { useQuery } from '../hooks/useQuery';
 import { formatCLP, formatFechaHora } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
 
-// Color del badge segun tipo de movimiento.
+// Color del badge según tipo de movimiento.
 const COLOR_MOVIMIENTO = {
   VENTA: 'danger',
   INGRESO_PROVEEDOR: 'success',
@@ -58,7 +58,7 @@ export default function ReportesPage() {
 
 
   const reportes = useMemo(() => {
-    // --- Ventas por metodo de pago ---
+    // --- Ventas por método de pago ---
     const porMetodo = {};
     for (const v of ventas) {
       porMetodo[v.metodo_pago] = porMetodo[v.metodo_pago] || {
@@ -73,7 +73,7 @@ export default function ReportesPage() {
       (a, b) => b.monto - a.monto,
     );
 
-    // --- Productos mas vendidos (por unidades) ---
+    // --- Productos más vendidos (por unidades) ---
     const porProducto = new Map();
     for (const linea of detalle) {
       const item = porProducto.get(linea.producto_nombre) || {
@@ -89,7 +89,7 @@ export default function ReportesPage() {
       .sort((a, b) => b.unidades - a.unidades)
       .slice(0, 6);
 
-    // --- Valor del inventario por categoria (a precio de costo) ---
+    // --- Valor del inventario por categoría (a precio de costo) ---
     const porCategoria = categorias.map((cat) => ({
       nombre: cat.nombre,
       valor: variantes
@@ -126,16 +126,16 @@ export default function ReportesPage() {
       <PageHeader
         titulo="Reportes"
         icono="bi-file-earmark-bar-graph"
-        descripcion="Analisis de ventas e inventario"
+        descripcion="Análisis de ventas e inventario"
       />
 
       <div className="fp-page-body">
         <div className="row g-3">
-          {/* Ventas por metodo de pago */}
+          {/* Ventas por método de pago */}
           <div className="col-lg-6">
             <div className="card border-0 shadow-sm h-100">
               <div className="card-header bg-white">
-                <h2 className="h6 m-0">Ventas por metodo de pago</h2>
+                <h2 className="h6 m-0">Ventas por método de pago</h2>
               </div>
               <div className="card-body">
                 {reportes.ventasPorMetodo.map((m) => (
@@ -157,11 +157,11 @@ export default function ReportesPage() {
             </div>
           </div>
 
-          {/* Productos mas vendidos */}
+          {/* Productos más vendidos */}
           <div className="col-lg-6">
             <div className="card border-0 shadow-sm h-100">
               <div className="card-header bg-white">
-                <h2 className="h6 m-0">Productos mas vendidos</h2>
+                <h2 className="h6 m-0">Productos más vendidos</h2>
               </div>
               <div className="card-body">
                 {reportes.topProductos.map((p) => (
@@ -178,11 +178,11 @@ export default function ReportesPage() {
             </div>
           </div>
 
-          {/* Valor del inventario por categoria */}
+          {/* Valor del inventario por categoría */}
           <div className="col-lg-6">
             <div className="card border-0 shadow-sm h-100">
               <div className="card-header bg-white">
-                <h2 className="h6 m-0">Valor de inventario por categoria</h2>
+                <h2 className="h6 m-0">Valor de inventario por categoría</h2>
               </div>
               <div className="card-body">
                 {reportes.porCategoria.map((c) => (
@@ -204,11 +204,11 @@ export default function ReportesPage() {
             </div>
           </div>
 
-          {/* Ultimos movimientos de inventario */}
+          {/* Últimos movimientos de inventario */}
           <div className="col-lg-6">
             <div className="card border-0 shadow-sm h-100">
               <div className="card-header bg-white">
-                <h2 className="h6 m-0">Ultimos movimientos de inventario</h2>
+                <h2 className="h6 m-0">Últimos movimientos de inventario</h2>
               </div>
               <div className="table-responsive">
                 <table className="table table-sm table-hover align-middle m-0">

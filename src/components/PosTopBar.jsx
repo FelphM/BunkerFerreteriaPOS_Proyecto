@@ -2,7 +2,7 @@
  * PosTopBar.jsx
  * ---------------------------------------------------------------------------
  * BARRA SUPERIOR del Punto de Venta.
- * Incluye indicador de estado de conexion y contador de ventas pendientes.
+ * Incluye indicador de estado de conexión y contador de ventas pendientes.
  * ---------------------------------------------------------------------------
  */
 import { forwardRef } from 'react';
@@ -23,7 +23,7 @@ const PosTopBar = forwardRef(function PosTopBar(
         <div className="d-flex align-items-center gap-1 text-nowrap px-2 py-1 rounded"
           style={{ background: '#fff3cd', color: '#856404', fontSize: '0.78rem' }}>
           <i className="bi bi-wifi-off" />
-          <span className="d-none d-md-inline">Sin conexion</span>
+          <span className="d-none d-md-inline">Sin conexión</span>
         </div>
       )}
 

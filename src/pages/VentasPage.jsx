@@ -1,8 +1,8 @@
 /**
  * VentasPage.jsx
  * ---------------------------------------------------------------------------
- * Historial de ventas: listado con busqueda y filtro por metodo de pago,
- * indicadores del periodo y modal con el detalle de cada venta.
+ * Historial de ventas: listado con búsqueda y filtro por método de pago,
+ * indicadores del período y modal con el detalle de cada venta.
  * ---------------------------------------------------------------------------
  */
 import { useMemo, useState } from 'react';
@@ -18,7 +18,7 @@ import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
 import Modal from '../components/ui/Modal';
 
-// Color del badge segun metodo de pago.
+// Color del badge según método de pago.
 const COLOR_PAGO = {
   Efectivo: 'success',
   Transferencia: 'primary',
@@ -75,7 +75,7 @@ export default function VentasPage() {
     setTimeout(() => { w.print(); w.close(); }, 250);
   }
 
-  // Detalle de la venta abierta en el modal (DEBE ir despues de ventaSel).
+  // Detalle de la venta abierta en el modal (DEBE ir después de ventaSel).
   const { data: detalle = [] } = useQuery(
     () => ventaSel ? getDetalleVenta(ventaSel.id) : Promise.resolve([]),
     [ventaSel?.id],
@@ -146,7 +146,7 @@ export default function VentasPage() {
           </div>
           <div className="col-sm-6 col-xl-3">
             <StatCard
-              titulo="Total historico"
+              titulo="Total histórico"
               valor={formatCLP(ventas.reduce((s, v) => s + v.total, 0))}
               icono="bi-bar-chart"
               color="secondary"
@@ -174,7 +174,7 @@ export default function VentasPage() {
               value={metodo}
               onChange={(e) => setMetodo(e.target.value)}
             >
-              <option value="">Todos los metodos</option>
+              <option value="">Todos los métodos</option>
               <option value="Efectivo">Efectivo</option>
               <option value="Transferencia">Transferencia</option>
               <option value="Transbank">Transbank</option>
@@ -191,7 +191,7 @@ export default function VentasPage() {
                   <th>N. Venta</th>
                   <th>Cliente</th>
                   <th>Fecha</th>
-                  <th>Metodo de pago</th>
+                  <th>Método de pago</th>
                   <th className="text-end">Total</th>
                   <th />
                 </tr>
@@ -293,7 +293,7 @@ export default function VentasPage() {
                 {formatFechaHora(ventaSel.creado_en)}
               </div>
               <div className="col-sm-6">
-                <span className="text-secondary">Metodo de pago: </span>
+                <span className="text-secondary">Método de pago: </span>
                 {ventaSel.metodo_pago}
               </div>
               {ventaSel.observaciones && (
@@ -304,7 +304,7 @@ export default function VentasPage() {
               )}
             </div>
 
-            {/* Lineas de detalle */}
+            {/* Líneas de detalle */}
             <table className="table table-sm align-middle">
               <thead className="table-light">
                 <tr>

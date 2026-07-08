@@ -6,13 +6,14 @@
  * Orquesta los 4 bloques de la pantalla:
  *   - BARRA SUPERIOR : <PosTopBar />     (filtro de grilla + Añadir Producto)
  *   - PANEL IZQUIERDO: <CartPanel />     (carrito de venta)
- *   - PANEL CENTRAL  : <ProductGrid />   (catalogo por categorias)
+ *   - PANEL CENTRAL  : <ProductGrid />   (catálogo por categorías)
  *   - PANEL DERECHO  : <CheckoutPanel /> (cobro)
  *   + Modales: <AddProductModal /> y <HeldSalesModal />
  * ---------------------------------------------------------------------------
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSellableItems, getCategorias, getVariantesInventario, getClientes } from '../data/queries';
+import { supabase } from '../lib/supabaseClient';
 import { usePosCart } from '../hooks/usePosCart';
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 import { formatCLP } from '../utils/format';
@@ -37,7 +38,7 @@ export default function PosPage() {
     pauseSale, recoverSale, finalizarVenta,
   } = usePosCart();
 
-  // Catalogo cargado desde Supabase.
+  // Catálogo cargado desde Supabase.
   const [sellableItems, setSellableItems] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -54,15 +55,33 @@ export default function PosPage() {
     getClientes().then(setClientes).catch(console.error);
   }, []);
 
-  // Carga productos con bajo stock al montar (se refresca al abrir el modal).
+  // Carga productos con bajo stock y se mantiene al día vía Supabase Realtime
+  // (antes solo cargaba una vez al montar y quedaba desactualizado durante la sesión).
   useEffect(() => {
-    getVariantesInventario()
-      .then((variantes) => {
-        setProductosBajoStock(
-          variantes.filter((v) => v.activo && v.stock_actual <= v.stock_minimo),
-        );
-      })
-      .catch(console.error);
+    const cargarBajoStock = () => {
+      getVariantesInventario()
+        .then((variantes) => {
+          setProductosBajoStock(
+            variantes.filter((v) => v.activo && v.stock_actual <= v.stock_minimo),
+          );
+        })
+        .catch(console.error);
+    };
+
+    cargarBajoStock();
+
+    const channel = supabase
+      .channel('pos-stock-alertas')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'producto_variantes' },
+        cargarBajoStock,
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Estado de UI.
@@ -70,6 +89,7 @@ export default function PosPage() {
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [montoRecibido, setMontoRecibido] = useState('');
   const [cliente, setCliente] = useState('');
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null); // cliente registrado elegido en el buscador (id, nombre, rut, correo)
   const [notas, setNotas] = useState('');
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showNuevoCliente, setShowNuevoCliente] = useState(false);
@@ -103,15 +123,15 @@ export default function PosPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // ---- PISTOLA DE CODIGO DE BARRAS ------------------------------------
-  // Detecta lecturas rapidas y agrega directo al carrito.
+  // ---- PISTOLA DE CÓDIGO DE BARRAS ------------------------------------
+  // Detecta lecturas rápidas y agrega directo al carrito.
   const handleScan = useCallback(
     (code) => {
       const item = sellableItems.find((i) => i.codigo_barras === code);
       if (item) {
         addToCart(item);
       } else {
-        console.warn(`[POS] Codigo de barras sin coincidencia: ${code}`);
+        console.warn(`[POS] Código de barras sin coincidencia: ${code}`);
       }
     },
     [sellableItems, addToCart],
@@ -122,8 +142,15 @@ export default function PosPage() {
     setMetodoPago('Efectivo');
     setMontoRecibido('');
     setCliente('');
+    setClienteSeleccionado(null);
     setNotas('');
     setErrorVenta(null);
+  };
+
+  /** El cajero editó el nombre a mano: ya no corresponde al cliente elegido en el buscador. */
+  const handleChangeCliente = (valor) => {
+    setCliente(valor);
+    setClienteSeleccionado(null);
   };
 
   // ---- HANDLERS -------------------------------------------------------
@@ -151,8 +178,8 @@ export default function PosPage() {
 
     const result = await finalizarVenta({
       nombreCliente: nombreClienteSnapshot,
-      rutCliente: null,
-      correoCliente: null,
+      rutCliente: clienteSeleccionado?.rut ?? null,
+      correoCliente: clienteSeleccionado?.correo ?? null,
       metodoPago,
       observaciones: notas.trim() || null,
     });
@@ -161,7 +188,7 @@ export default function PosPage() {
       refreshPendingCount();
       resetCheckoutForm();
       if (result.offline) {
-        window.alert('Venta guardada localmente (sin conexion).\nSe sincronizara automaticamente al recuperar la red.');
+        window.alert('Venta guardada localmente (sin conexión).\nSe sincronizará automáticamente al recuperar la red.');
       } else {
         setTicketData({
           venta: result.venta,
@@ -286,7 +313,8 @@ export default function PosPage() {
           montoRecibido={montoRecibido}
           onChangeMontoRecibido={setMontoRecibido}
           cliente={cliente}
-          onChangeCliente={setCliente}
+          onChangeCliente={handleChangeCliente}
+          onSeleccionarCliente={setClienteSeleccionado}
           notas={notas}
           onChangeNotas={setNotas}
           hayItems={hayItems}
@@ -310,9 +338,13 @@ export default function PosPage() {
       <AddClienteModal
         show={showNuevoCliente}
         onClose={() => setShowNuevoCliente(false)}
-        onClienteCreado={() => {
+        onClienteCreado={(nuevoCliente) => {
           setShowNuevoCliente(false);
           getClientes().then(setClientes).catch(console.error);
+          if (nuevoCliente) {
+            setCliente(nuevoCliente.nombre ?? '');
+            setClienteSeleccionado(nuevoCliente);
+          }
         }}
       />
 
@@ -336,7 +368,7 @@ export default function PosPage() {
         }}
       />
 
-      {/* ================= MODAL: PREVIEW COTIZACION =================== */}
+      {/* ================= MODAL: PREVIEW COTIZACIÓN =================== */}
       <CotizarPreviewModal
         show={!!cotizacionPreview}
         cotizacion={cotizacionPreview}

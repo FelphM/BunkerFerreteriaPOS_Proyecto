@@ -1,13 +1,13 @@
 /**
  * PageHeader.jsx
  * ---------------------------------------------------------------------------
- * Encabezado estandar de las vistas del back-office (Dashboard, Inventario,
- * Ventas, etc.). Garantiza que todas las secciones compartan el mismo patron
- * visual: icono + titulo + descripcion, con una zona opcional de acciones.
+ * Encabezado estándar de las vistas del back-office (Dashboard, Inventario,
+ * Ventas, etc.). Garantiza que todas las secciones compartan el mismo patrón
+ * visual: icono + título + descripción, con una zona opcional de acciones.
  *
- * @param {string} titulo       Nombre de la seccion.
+ * @param {string} titulo       Nombre de la sección.
  * @param {string} icono        Clase de Bootstrap Icon (ej: "bi-box-seam").
- * @param {string} [descripcion] Texto guia bajo el titulo.
+ * @param {string} [descripcion] Texto guía bajo el título.
  * @param {React.ReactNode} [children] Acciones alineadas a la derecha
  *                                     (botones, filtros, etc.).
  * ---------------------------------------------------------------------------

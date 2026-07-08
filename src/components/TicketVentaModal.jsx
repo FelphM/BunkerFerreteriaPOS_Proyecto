@@ -2,7 +2,7 @@
  * TicketVentaModal.jsx
  * ---------------------------------------------------------------------------
  * Modal que se muestra tras completar una venta exitosa.
- * Incluye animacion de checkmark y ticket de venta con opcion de impresion.
+ * Incluye animación de checkmark y ticket de venta con opción de impresión.
  *
  * Props:
  *   ticketData  {object|null}  { venta, items, totals, metodoPago,
@@ -62,13 +62,13 @@ export default function TicketVentaModal({ ticketData, onClose }) {
             {/* ── Cuerpo: ticket ── */}
             <div className="modal-body pt-3 pb-2">
 
-              {/* Esta div es el target de impresion */}
+              {/* Esta div es el target de impresión */}
               <div className="fp-ticket-print">
                 <div className="fp-ticket-paper">
 
                   {/* Encabezado de la tienda */}
                   <div className="fp-ticket-store-header">
-                    <div className="fw-bold">BUNKER FERRETERIA</div>
+                    <div className="fw-bold">BUNKER FERRETERÍA</div>
                     <div>Boleta de Venta</div>
                     {venta?.numero_venta && (
                       <div>N° {String(venta.numero_venta).padStart(6, '0')}</div>
@@ -83,7 +83,7 @@ export default function TicketVentaModal({ ticketData, onClose }) {
 
                   <div className="fp-ticket-hr" />
 
-                  {/* Lineas de producto */}
+                  {/* Líneas de producto */}
                   <table className="fp-ticket-table">
                     <colgroup>
                       <col style={{ width: '44%' }} />

@@ -3,16 +3,16 @@
  * ---------------------------------------------------------------------------
  * Modal para CREAR UN NUEVO PRODUCTO en el inventario desde el POS.
  *
- * El formulario crea en dos pasos (dentro de una sola transaccion visual):
- *   1. Registro en `productos`      (nombre, desc., categoria, proveedor, codigo).
+ * El formulario crea en dos pasos (dentro de una sola transacción visual):
+ *   1. Registro en `productos`      (nombre, desc., categoría, proveedor, código).
  *   2. Primera variante/SKU en `producto_variantes` (medida, precio, stock).
  *   3. Movimiento `CARGA_INICIAL` en `movimientos_inventario`.
  *
- * Los selects de categoria y proveedor se cargan desde Supabase al montar.
+ * Los selects de categoría y proveedor se cargan desde Supabase al montar.
  * El precio_venta se calcula en tiempo real: precio_compra × (1 + margen/100).
  *
- * TODO: Si el producto tiene varias medidas/variantes, el cajero debera
- * agregarlas desde la vista Inventario. Este modal es para el alta rapida.
+ * TODO: Si el producto tiene varias medidas/variantes, el cajero deberá
+ * agregarlas desde la vista Inventario. Este modal es para el alta rápida.
  * ---------------------------------------------------------------------------
  */
 import { useEffect, useRef, useState, useMemo } from 'react';
@@ -59,7 +59,7 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
   // Añadir proveedor (abre AddProveedorModal)
   const [showNuevoProv, setShowNuevoProv] = useState(false);
 
-  // Carga catalogos al montar el modal por primera vez.
+  // Carga catálogos al montar el modal por primera vez.
   useEffect(() => {
     getCategorias().then(setCategorias).catch(console.error);
     getProveedores().then(setProveedores).catch(console.error);
@@ -100,15 +100,15 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
     if (errores[name]) setErrores((prev) => ({ ...prev, [name]: null }));
   };
 
-  // Validacion del formulario.
+  // Validación del formulario.
   const validar = () => {
     const errs = {};
     if (!form.nombre.trim()) errs.nombre = 'El nombre es obligatorio.';
-    if (!form.categoria_id) errs.categoria_id = 'Selecciona una categoria.';
+    if (!form.categoria_id) errs.categoria_id = 'Selecciona una categoría.';
     if (!form.variante_nombre.trim()) errs.variante_nombre = 'Indica la medida/tipo.';
     if (!form.unidad_venta) errs.unidad_venta = 'Selecciona la unidad de venta.';
     if (!form.precio_compra || parseFloat(form.precio_compra) <= 0)
-      errs.precio_compra = 'Ingresa un precio de compra valido.';
+      errs.precio_compra = 'Ingresa un precio de compra válido.';
     if (!form.margen_ganancia || parseFloat(form.margen_ganancia) < 0)
       errs.margen_ganancia = 'El margen debe ser 0 o mayor.';
     return errs;
@@ -130,7 +130,7 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
       setNuevaCatNombre('');
       setShowNuevaCat(false);
     } catch (err) {
-      console.error('Error creando categoria:', err.message);
+      console.error('Error creando categoría:', err.message);
     } finally {
       setCreandoCat(false);
     }
@@ -197,11 +197,11 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
         });
       }
 
-      // Notifica al padre para refrescar el catalogo.
+      // Notifica al padre para refrescar el catálogo.
       setExito(true);
       onProductoCreado?.({ producto, variante });
 
-      // Cierra el modal automaticamente tras 1.5s.
+      // Cierra el modal automáticamente tras 1.5s.
       setTimeout(() => { setExito(false); onClose(); }, 1500);
 
     } catch (err) {
@@ -223,7 +223,7 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
         onMouseDown={(e) => { if (e.target === e.currentTarget && !guardando) onClose(); }}
       >
         <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-          <div className="modal-content">
+          <form className="modal-content" onSubmit={handleGuardar} noValidate>
 
             {/* HEADER */}
             <div className="modal-header">
@@ -241,7 +241,6 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
             </div>
 
             {/* BODY */}
-            <form onSubmit={handleGuardar} noValidate>
               <div className="modal-body">
 
                 {/* Error global */}
@@ -260,7 +259,7 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
                   </div>
                 )}
 
-                {/* --------- SECCION 1: DATOS DEL PRODUCTO -------------- */}
+                {/* --------- SECCIÓN 1: DATOS DEL PRODUCTO -------------- */}
                 <div className="fw-bold text-uppercase text-secondary mb-3" style={{ fontSize: '0.72rem', letterSpacing: '0.06em' }}>
                   <i className="bi bi-box me-1" /> Datos del Producto
                 </div>
@@ -283,23 +282,23 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
                     {errores.nombre && <div className="invalid-feedback">{errores.nombre}</div>}
                   </div>
 
-                  {/* Descripcion */}
+                  {/* Descripción */}
                   <div className="col-12">
-                    <label className="form-label fw-semibold">Descripcion</label>
+                    <label className="form-label fw-semibold">Descripción</label>
                     <textarea
                       name="descripcion"
                       className="form-control"
                       rows={2}
-                      placeholder="Descripcion opcional del producto..."
+                      placeholder="Descripción opcional del producto..."
                       value={form.descripcion}
                       onChange={handleChange}
                     />
                   </div>
 
-                  {/* Categoria */}
+                  {/* Categoría */}
                   <div className="col-md-6">
                     <label className="form-label fw-semibold">
-                      Categoria <span className="text-danger">*</span>
+                      Categoría <span className="text-danger">*</span>
                     </label>
                     <div className="d-flex gap-2">
                       <select
@@ -388,7 +387,7 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
 
                   {/* Código interno */}
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold">Codigo interno (SKU)</label>
+                    <label className="form-label fw-semibold">Código interno (SKU)</label>
                     <input
                       type="text"
                       name="codigo_interno"
@@ -446,7 +445,7 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
 
                   {/* Código de barras */}
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold">Codigo de barras</label>
+                    <label className="form-label fw-semibold">Código de barras</label>
                     <input
                       type="text"
                       name="codigo_barras"
@@ -505,7 +504,7 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
                     <div className="form-control bg-light fw-bold text-success fs-5 text-center">
                       {precioVenta > 0 ? formatCLP(precioVenta) : '—'}
                     </div>
-                    <small className="text-secondary">Calculado automaticamente</small>
+                    <small className="text-secondary">Calculado automáticamente</small>
                   </div>
 
                   {/* Stock inicial */}
@@ -531,7 +530,7 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
 
                   {/* Stock mínimo */}
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold">Stock minimo (alerta)</label>
+                    <label className="form-label fw-semibold">Stock mínimo (alerta)</label>
                     <div className="input-group">
                       <input
                         type="number"
@@ -579,8 +578,7 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
                   )}
                 </button>
               </div>
-            </form>
-          </div>
+          </form>
         </div>
       </div>
       <div className="modal-backdrop fade show" />
