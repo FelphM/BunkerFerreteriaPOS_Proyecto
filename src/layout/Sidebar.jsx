@@ -64,7 +64,9 @@ export default function Sidebar({ collapsed, mobileOpen, onDesktopToggle, onMobi
       {/* ------------------------ NAVEGACIÓN --------------------------- */}
       <nav className="fp-sidebar-nav flex-grow-1 overflow-auto px-2 py-3">
         <ul className="nav flex-column gap-1">
-          {navItems.map((item) => (
+          {navItems
+            .filter((item) => !item.soloAdmin || usuario.rol === 'admin')
+            .map((item) => (
             <li className="nav-item" key={item.path}>
               <NavLink
                 to={item.path}

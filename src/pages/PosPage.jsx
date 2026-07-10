@@ -36,7 +36,7 @@ export default function PosPage() {
     cart, heldSales, totals, ivaPct,
     addToCart, updateQuantity, changeQuantity, removeItem, clearCart,
     pauseSale, recoverSale, finalizarVenta,
-  } = usePosCart();
+  } = usePosCart((msg) => showToast(msg, 'warning'));
 
   // Catálogo cargado desde Supabase.
   const [sellableItems, setSellableItems] = useState([]);
@@ -103,8 +103,8 @@ export default function PosPage() {
   const [errorVenta, setErrorVenta] = useState(null);
   const [toast, setToast] = useState(null);
 
-  function showToast(msg) {
-    setToast(msg);
+  function showToast(msg, tipo = 'success') {
+    setToast({ msg, tipo });
     setTimeout(() => setToast(null), 3000);
   }
 
@@ -395,14 +395,14 @@ export default function PosPage() {
           className="position-fixed bottom-0 end-0 p-3"
           style={{ zIndex: 9999 }}
         >
-          <div className="toast show align-items-center text-white bg-success border-0 shadow">
+          <div className={`toast show align-items-center border-0 shadow ${toast.tipo === 'warning' ? 'bg-warning text-dark' : 'bg-success text-white'}`}>
             <div className="d-flex">
               <div className="toast-body fw-semibold">
-                <i className="bi bi-check-circle me-2" />{toast}
+                <i className={`bi bi-${toast.tipo === 'warning' ? 'exclamation-triangle' : 'check-circle'} me-2`} />{toast.msg}
               </div>
               <button
                 type="button"
-                className="btn-close btn-close-white me-2 m-auto"
+                className={`btn-close ${toast.tipo === 'warning' ? '' : 'btn-close-white'} me-2 m-auto`}
                 onClick={() => setToast(null)}
               />
             </div>

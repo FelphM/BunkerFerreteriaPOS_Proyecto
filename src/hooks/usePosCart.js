@@ -12,12 +12,22 @@
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { getVentasEnEspera, getConfigNumero } from '../data/queries';
-import { safeQty } from '../utils/format';
+import { getVentasEnEspera, getConfigNumero, getVariantesInventario } from '../data/queries';
+import { safeQty, formatStock } from '../utils/format';
 import db from '../lib/offlineDB';
 import { useAuth } from '../context/useAuth';
 
-export function usePosCart() {
+/** Nombre legible de un item de carrito, incluyendo variante si corresponde. */
+const nombreItem = (item) =>
+  item.tieneVariantes && item.variante_nombre
+    ? `${item.nombre} (${item.variante_nombre})`
+    : item.nombre;
+
+/**
+ * @param {(msg: string) => void} [onStockWarning] - Se llama cuando una
+ *   acción del carrito queda topada por el stock disponible de un producto.
+ */
+export function usePosCart(onStockWarning) {
   const { session } = useAuth();
 
   // -------------------------------------------------------------------------
@@ -40,10 +50,20 @@ export function usePosCart() {
   const addToCart = useCallback((item) => {
     setCart((prev) => {
       const existing = prev.find((i) => i.id === item.id);
+      const cantidadActual = existing ? safeQty(existing.cantidad) : 0;
+      const stockDisponible = item.stock_actual ?? Infinity;
+
+      if (cantidadActual + 1 > stockDisponible) {
+        onStockWarning?.(
+          `No hay más stock disponible de "${nombreItem(item)}". Disponible: ${formatStock(stockDisponible)} ${item.unidad_venta ?? ''}.`,
+        );
+        return prev;
+      }
+
       if (existing) {
         return prev.map((i) =>
           i.id === item.id
-            ? { ...i, cantidad: safeQty(i.cantidad) + 1 }
+            ? { ...i, cantidad: cantidadActual + 1 }
             : i,
         );
       }
@@ -59,29 +79,49 @@ export function usePosCart() {
           precio_venta: item.precio_venta,
           unidad_venta: item.unidad_venta,
           codigo_barras: item.codigo_barras,
+          stock_actual: stockDisponible,
           cantidad: 1,
         },
       ];
     });
-  }, []);
+  }, [onStockWarning]);
 
   const updateQuantity = useCallback((variantId, cantidad) => {
     setCart((prev) =>
-      prev.map((i) => (i.id === variantId ? { ...i, cantidad } : i)),
+      prev.map((i) => {
+        if (i.id !== variantId) return i;
+        const stockDisponible = i.stock_actual ?? Infinity;
+        // No se coerciona `cantidad` a número acá: el input mantiene el valor
+        // crudo mientras el usuario escribe decimales (ej. "0.5" para metros/kg).
+        if (safeQty(cantidad) > stockDisponible) {
+          onStockWarning?.(
+            `No hay más stock disponible de "${nombreItem(i)}". Disponible: ${formatStock(stockDisponible)} ${i.unidad_venta ?? ''}.`,
+          );
+          return { ...i, cantidad: stockDisponible };
+        }
+        return { ...i, cantidad };
+      }),
     );
-  }, []);
+  }, [onStockWarning]);
 
   const changeQuantity = useCallback((variantId, delta) => {
     setCart((prev) =>
       prev
-        .map((i) =>
-          i.id === variantId
-            ? { ...i, cantidad: safeQty(i.cantidad) + delta }
-            : i,
-        )
+        .map((i) => {
+          if (i.id !== variantId) return i;
+          const stockDisponible = i.stock_actual ?? Infinity;
+          const nueva = safeQty(i.cantidad) + delta;
+          if (delta > 0 && nueva > stockDisponible) {
+            onStockWarning?.(
+              `No hay más stock disponible de "${nombreItem(i)}". Disponible: ${formatStock(stockDisponible)} ${i.unidad_venta ?? ''}.`,
+            );
+            return i;
+          }
+          return { ...i, cantidad: nueva };
+        })
         .filter((i) => safeQty(i.cantidad) > 0),
     );
-  }, []);
+  }, [onStockWarning]);
 
   const removeItem = useCallback((variantId) => {
     setCart((prev) => prev.filter((i) => i.id !== variantId));
@@ -176,6 +216,33 @@ export function usePosCart() {
         return { success: true, offline: true };
       }
 
+      // Verificación de stock en tiempo real: el stock del carrito pudo
+      // quedar desactualizado (venta desde otra caja, ajuste de inventario).
+      try {
+        const variantesActuales = await getVariantesInventario();
+        const stockPorId = Object.fromEntries(variantesActuales.map((v) => [v.id, v]));
+
+        const insuficientes = cart
+          .map((item) => {
+            const disponible = stockPorId[item.id]?.stock_actual ?? 0;
+            return safeQty(item.cantidad) > disponible
+              ? `${nombreItem(item)} (disponible: ${formatStock(disponible)} ${item.unidad_venta ?? ''})`
+              : null;
+          })
+          .filter(Boolean);
+
+        if (insuficientes.length > 0) {
+          return {
+            success: false,
+            error: `Stock insuficiente para: ${insuficientes.join(', ')}.`,
+          };
+        }
+      } catch (err) {
+        console.error('[usePosCart] Error al verificar stock antes de vender:', err.message);
+        // Si la verificación falla, se intenta igual la venta: el trigger de la BD
+        // bloqueará el insert si realmente no hay stock.
+      }
+
       // 1. Crear cabecera de la venta.
       const { data: venta, error: errVenta } = await supabase
         .from('ventas')
@@ -204,7 +271,13 @@ export function usePosCart() {
 
       if (errDetalle) {
         await supabase.from('ventas').delete().eq('id', venta.id);
-        return { success: false, error: errDetalle.message };
+        // El trigger de la BD solo informa un número de stock, sin nombre de
+        // producto: esto solo puede ocurrir si el stock cambió justo entre la
+        // verificación previa y este insert (venta concurrente en otra caja).
+        const msg = /stock insuficiente/i.test(errDetalle.message)
+          ? 'Stock insuficiente: el stock disponible cambió justo antes de confirmar la venta. Actualice el carrito e intente nuevamente.'
+          : errDetalle.message;
+        return { success: false, error: msg };
       }
 
       clearCart();

@@ -13,14 +13,14 @@
 export const navItems = [
   { path: '/', label: 'Punto de Venta', icono: 'bi-basket' },
   { path: '/dashboard', label: 'Dashboard', icono: 'bi-speedometer2' },
-  { path: '/inventario', label: 'Inventario', icono: 'bi-box-seam' },
+  { path: '/inventario', label: 'Inventario', icono: 'bi-box-seam', soloAdmin: true },
   { path: '/ventas', label: 'Ventas', icono: 'bi-graph-up-arrow' },
-  { path: '/compras', label: 'Compras', icono: 'bi-bag' },
+  { path: '/compras', label: 'Compras', icono: 'bi-bag', soloAdmin: true },
   { path: '/facturas', label: 'Facturas', icono: 'bi-receipt' },
   { path: '/clientes', label: 'Clientes', icono: 'bi-people' },
   { path: '/proveedores', label: 'Proveedores', icono: 'bi-truck' },
   { path: '/categorias', label: 'Categorías', icono: 'bi-tags' },
   { path: '/cotizaciones', label: 'Cotizaciones', icono: 'bi-file-earmark-text' },
   { path: '/reportes', label: 'Reportes', icono: 'bi-file-earmark-bar-graph' },
-  { path: '/configuracion', label: 'Configuración', icono: 'bi-gear' },
+  { path: '/configuracion', label: 'Configuración', icono: 'bi-gear', soloAdmin: true },
 ];

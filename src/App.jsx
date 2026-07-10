@@ -18,6 +18,7 @@
  */
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
+import RequireAdmin from './components/RequireAdmin';
 import AppLayout from './layout/AppLayout';
 import LoginPage from './pages/LoginPage';
 import PosPage from './pages/PosPage';
@@ -47,16 +48,20 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route index element={<PosPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="inventario" element={<InventarioPage />} />
           <Route path="ventas" element={<VentasPage />} />
-          <Route path="compras" element={<ComprasPage />} />
           <Route path="clientes" element={<ClientesPage />} />
           <Route path="proveedores" element={<ProveedoresPage />} />
           <Route path="categorias" element={<CategoriasPage />} />
           <Route path="cotizaciones" element={<CotizacionesPage />} />
           <Route path="facturas" element={<FacturasPage />} />
           <Route path="reportes" element={<ReportesPage />} />
-          <Route path="configuracion" element={<ConfiguracionPage />} />
+
+          {/* Exclusivas de Administrador (ver RequireAdmin.jsx) */}
+          <Route element={<RequireAdmin />}>
+            <Route path="inventario" element={<InventarioPage />} />
+            <Route path="compras" element={<ComprasPage />} />
+            <Route path="configuracion" element={<ConfiguracionPage />} />
+          </Route>
 
           {/* Ruta comodin dentro del sistema */}
           <Route

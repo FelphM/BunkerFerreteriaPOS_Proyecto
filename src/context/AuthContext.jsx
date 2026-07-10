@@ -23,8 +23,9 @@
  *   - `usuarios_perfiles` se crea automáticamente vía el trigger
  *     `on_auth_user_created` al registrar un nuevo usuario en Supabase Auth.
  *     Incluye nombre (de raw_user_meta_data), rol ('cajero') y activo (true).
- *   - Para cambiar rol o desactivar un usuario usar la RPC
- *     `actualizar_usuario_admin` (solo administradores).
+ *   - Cambiar rol o desactivar un usuario (solo administradores) se hace
+ *     desde ConfiguracionPage.jsx vía UPDATE directo; requiere la policy RLS
+ *     `usuarios_update_admin` documentada en el comentario de cabecera de ese archivo.
  * ---------------------------------------------------------------------------
  */
 import { useCallback, useEffect, useState } from 'react';

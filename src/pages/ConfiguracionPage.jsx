@@ -3,18 +3,38 @@
  * ---------------------------------------------------------------------------
  * Configuración del sistema:
  *   - Parámetros generales editables (tabla `configuracion`).
- *   - Usuarios y roles (tabla `usuarios_perfiles`).
+ *   - Usuarios y roles (tabla `usuarios_perfiles`), edición solo para admin.
  *
  * REQUISITO RLS: para guardar parámetros, ejecutar en Supabase SQL Editor:
  *   CREATE POLICY configuracion_update ON configuracion
  *     FOR UPDATE USING (auth.role() = 'authenticated')
  *     WITH CHECK (auth.role() = 'authenticated');
+ *
+ * REQUISITO RLS: para que un admin pueda cambiar rol/estado de otro usuario,
+ * ejecutar en Supabase SQL Editor (la tabla usuarios_perfiles solo tiene
+ * policy de SELECT — sin esto, el UPDATE es bloqueado en silencio: PostgREST
+ * responde éxito con 0 filas afectadas y no hay forma de detectarlo salvo
+ * revisando el largo de `data` tras el `.select()`):
+ *   CREATE POLICY usuarios_update_admin ON usuarios_perfiles
+ *     FOR UPDATE USING (
+ *       EXISTS (SELECT 1 FROM usuarios_perfiles up WHERE up.id = auth.uid() AND up.rol = 'admin')
+ *     )
+ *     WITH CHECK (
+ *       EXISTS (SELECT 1 FROM usuarios_perfiles up WHERE up.id = auth.uid() AND up.rol = 'admin')
+ *     );
+ *
+ * Esta página además está gateada a nivel de ruta por <RequireAdmin /> (ver
+ * App.jsx): solo el rol admin puede navegar a /configuracion. La restricción
+ * real de escritura contra intentos directos a la API vive en
+ * backup_supaBase/rls_admin_restrictions.sql (incluye también Inventario y
+ * Compras, los otros casos de uso exclusivos de Administrador).
  * ---------------------------------------------------------------------------
  */
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { getConfiguracion, getUsuarios } from '../data/queries';
 import { useQuery } from '../hooks/useQuery';
+import { useAuth } from '../context/useAuth';
 import { formatFecha } from '../utils/format';
 import PageHeader from '../components/ui/PageHeader';
 import AddUserModal from '../components/AddUserModal';
@@ -23,6 +43,8 @@ const COLOR_ROL = { admin: 'primary', cajero: 'info', bodega: 'secondary' };
 const LABEL_ROL = { admin: 'Administrador', cajero: 'Cajero', bodega: 'Bodega' };
 
 export default function ConfiguracionPage() {
+  const { perfil } = useAuth();
+  const esAdmin = perfil?.rol === 'admin';
   const { data: configuracion = [], refetch: refetchConfig } = useQuery(getConfiguracion);
   const { data: usuarios = [], refetch: refetchUsuarios } = useQuery(getUsuarios);
 
@@ -83,21 +105,21 @@ export default function ConfiguracionPage() {
     setGuardandoUsuario(true);
     setErrorUsuario(null);
     try {
-      // Intenta primero vía RPC con SECURITY DEFINER (evita restricciones RLS).
-      // Si la función no existe en tu BD, ejecuta el SQL de la sección de ayuda.
-      const { error: rpcError } = await supabase.rpc('actualizar_usuario_admin', {
-        p_id:     editandoUsuario.id,
-        p_rol:    editandoUsuario.rol,
-        p_activo: editandoUsuario.activo,
-      });
+      const { data, error } = await supabase
+        .from('usuarios_perfiles')
+        .update({ rol: editandoUsuario.rol, activo: editandoUsuario.activo })
+        .eq('id', editandoUsuario.id)
+        .select();
 
-      if (rpcError) {
-        // Fallback: UPDATE directo (funciona si hay política RLS para admins)
-        const { error } = await supabase
-          .from('usuarios_perfiles')
-          .update({ rol: editandoUsuario.rol, activo: editandoUsuario.activo })
-          .eq('id', editandoUsuario.id);
-        if (error) throw new Error(error.message);
+      if (error) throw new Error(error.message);
+      // PostgREST no reporta error si RLS bloquea el UPDATE: devuelve éxito
+      // con 0 filas afectadas. Lo detectamos a mano (ver comentario de
+      // cabecera con la política RLS que falta).
+      if (!data || data.length === 0) {
+        throw new Error(
+          'No se pudo guardar: falta la política RLS de UPDATE para administradores en ' +
+          'la tabla usuarios_perfiles (ver comentario al inicio de ConfiguracionPage.jsx).',
+        );
       }
 
       await refetchUsuarios();
@@ -217,13 +239,15 @@ export default function ConfiguracionPage() {
                         </td>
                         <td className="text-nowrap text-secondary">{formatFecha(u.creado_en)}</td>
                         <td className="text-end">
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-secondary"
-                            onClick={() => setEditandoUsuario({ id: u.id, rol: u.rol, activo: u.activo, nombre: u.nombre })}
-                          >
-                            <i className="bi bi-pencil" />
-                          </button>
+                          {esAdmin && (
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => setEditandoUsuario({ id: u.id, rol: u.rol, activo: u.activo, nombre: u.nombre })}
+                            >
+                              <i className="bi bi-pencil" />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -257,9 +281,9 @@ export default function ConfiguracionPage() {
                 {errorUsuario && (
                   <div className="alert alert-danger py-2 small mb-3">
                     <i className="bi bi-exclamation-triangle me-2" />{errorUsuario}
-                    {errorUsuario.includes('function') || errorUsuario.includes('does not exist') ? (
+                    {errorUsuario.includes('política RLS') ? (
                       <div className="mt-2 text-secondary" style={{ fontSize: '0.8rem' }}>
-                        Ejecuta la función <code>actualizar_usuario_admin</code> en el SQL Editor de Supabase. Consultá las instrucciones de configuración.
+                        Ejecuta la policy <code>usuarios_update_admin</code> en el SQL Editor de Supabase (ver comentario de cabecera de este archivo).
                       </div>
                     ) : null}
                   </div>

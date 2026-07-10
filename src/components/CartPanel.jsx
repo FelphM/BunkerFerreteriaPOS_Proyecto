@@ -32,7 +32,7 @@ export default function CartPanel({
       <div className="card-header bg-white d-flex align-items-center justify-content-between">
         <h2 className="h6 m-0 d-flex align-items-center gap-2">
           <i className="bi bi-cart3 text-warning" />
-          Carrito de Venta
+          Carro de Venta
           <span className="badge fp-cart-count">{cart.length}</span>
         </h2>
         {!vacio && (
