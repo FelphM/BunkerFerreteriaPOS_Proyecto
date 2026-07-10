@@ -99,9 +99,12 @@ export function AuthProvider({ children }) {
    * Inicia sesión con email y contraseña.
    * @param {string} email
    * @param {string} password
+   * @param {string} [captchaToken] - Token de Turnstile (ver Turnstile.jsx).
+   *   Si Supabase tiene captcha protection activado en el Dashboard y no se
+   *   manda un token válido, el login es rechazado del lado del servidor.
    * @returns {Promise<{ success: boolean, message?: string }>}
    */
-  const signIn = useCallback(async (email, password) => {
+  const signIn = useCallback(async (email, password, captchaToken) => {
     setError(null);
 
     // Detecta configuración incompleta antes de llamar a Supabase.
@@ -119,6 +122,7 @@ export function AuthProvider({ children }) {
       res = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
+        options: captchaToken ? { captchaToken } : undefined,
       });
     } catch {
       const msg = 'No se pudo conectar con el servidor. Verifica tu conexión.';
@@ -133,9 +137,11 @@ export function AuthProvider({ children }) {
         'User not found': 'No existe una cuenta con ese correo.',
         'Too many requests': 'Demasiados intentos. Intenta en unos minutos.',
       };
-      const msg =
-        mensajes[res.error.message] ??
-        `Error al iniciar sesión: ${res.error.message}`;
+      // Cualquier variante del error de captcha (token faltante, inválido,
+      // expirado) cae acá — Supabase no usa siempre el mismo texto exacto.
+      const msg = /captcha/i.test(res.error.message)
+        ? 'No se pudo verificar el captcha. Recarga la página e intenta de nuevo.'
+        : mensajes[res.error.message] ?? `Error al iniciar sesión: ${res.error.message}`;
       setError(msg);
       return { success: false, message: msg };
     }

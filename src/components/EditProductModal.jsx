@@ -138,7 +138,10 @@ export default function EditProductModal({ item, onClose, onGuardado }) {
           codigo_interno: prod.codigo_interno.trim() || null,
         })
         .eq('id', item.id_producto);
-      if (eP) throw new Error(eP.message);
+      if (eP) {
+        if (eP.code === '23505') throw new Error('Ya existe un producto con ese código interno (SKU).');
+        throw new Error(eP.message);
+      }
 
       const { error: eV } = await supabase
         .from('producto_variantes')

@@ -14,6 +14,12 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import Turnstile from '../components/Turnstile';
+
+// Si no hay clave configurada, el captcha simplemente no se muestra ni se
+// exige — permite seguir desarrollando/desplegando sin bloquear el login
+// mientras se configura Cloudflare Turnstile + Supabase (ver README/instrucciones).
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
 export default function LoginPage() {
   const { signIn, error: authError } = useAuth();
@@ -26,6 +32,9 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [verPassword, setVerPassword] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  // Cambiar esta key fuerza un remount del widget (= pedir un token nuevo).
+  const [captchaKey, setCaptchaKey] = useState(0);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -39,13 +48,18 @@ export default function LoginPage() {
     const emailVal = form.email || e.target.email?.value || '';
     const passVal = form.password || e.target.password?.value || '';
     if (!emailVal || !passVal) return;
+    if (TURNSTILE_SITE_KEY && !captchaToken) return;
 
     setLoading(true);
-    const result = await signIn(emailVal, passVal);
+    const result = await signIn(emailVal, passVal, captchaToken);
     setLoading(false);
 
     if (result.success) {
       navigate(from, { replace: true });
+    } else if (TURNSTILE_SITE_KEY) {
+      // Los tokens de Turnstile son de un solo uso: pedimos uno nuevo.
+      setCaptchaToken('');
+      setCaptchaKey((k) => k + 1);
     }
   };
 
@@ -122,6 +136,18 @@ export default function LoginPage() {
             </div>
           </div>
 
+          {/* Captcha (Cloudflare Turnstile) — solo si está configurado */}
+          {TURNSTILE_SITE_KEY && (
+            <div className="mb-3 d-flex justify-content-center">
+              <Turnstile
+                key={captchaKey}
+                sitekey={TURNSTILE_SITE_KEY}
+                onVerify={setCaptchaToken}
+                onExpire={() => setCaptchaToken('')}
+              />
+            </div>
+          )}
+
           {/* Mensaje de error de autenticación */}
           {authError && (
             <div className="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3">
@@ -134,7 +160,7 @@ export default function LoginPage() {
           <button
             type="submit"
             className="btn fp-btn-login w-100 py-3 fw-bold mt-2"
-            disabled={loading || !form.email || !form.password}
+            disabled={loading || !form.email || !form.password || (TURNSTILE_SITE_KEY && !captchaToken)}
           >
             {loading ? (
               <>

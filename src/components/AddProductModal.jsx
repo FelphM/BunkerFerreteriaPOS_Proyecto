@@ -159,7 +159,10 @@ export default function AddProductModal({ show, onClose, onProductoCreado }) {
         .select()
         .single();
 
-      if (errProd) throw new Error(errProd.message);
+      if (errProd) {
+        if (errProd.code === '23505') throw new Error('Ya existe un producto con ese código interno (SKU).');
+        throw new Error(errProd.message);
+      }
 
       // 2. Crear la primera variante.
       const { data: variante, error: errVar } = await supabase
